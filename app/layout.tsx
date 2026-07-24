@@ -1,33 +1,22 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import type { ReactNode } from "react";
-import { CaseProvider } from "@/components/case-provider";
-import { CursorRotor } from "@/components/cursor-rotor";
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Domestic Violence Case Analyzer",
-  description: "Privacy-first domestic violence case analysis platform for intake, risk review, and legal preparation"
+  title: 'CaseGuard - AI Legal & Threat Triage Platform',
+  description: 'AI-assisted threat prediction and legal case triage for public safety and legal professionals.',
 };
 
 export default function RootLayout({
-  children
-}: Readonly<{
-  children: ReactNode;
-}>) {
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
-      <body>
-        <div aria-hidden className="background-shell">
-          <div className="video-bg">
-            <div className="video-bg-layer" />
-          </div>
-          <div className="grid-overlay" />
-        </div>
-        <CursorRotor />
-        <div className="app-shell">
-          <CaseProvider>{children}</CaseProvider>
-        </div>
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
