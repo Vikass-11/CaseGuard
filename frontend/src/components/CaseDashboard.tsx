@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { RefreshCw, AlertCircle, Shield, TrendingUp, AlertTriangle } from "lucide-react";
-import { Case } from "../types/complaint";
-import { complaintService } from "../services/complaintService";
+import type { Case } from "../types/complaint";
 
 export const CaseDashboard: React.FC = () => {
   const [cases, setCases] = useState<Case[]>([]);
@@ -20,29 +19,6 @@ export const CaseDashboard: React.FC = () => {
       setCases([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch cases");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchCaseById = async (id: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const caseData = await complaintService.getCaseById(id);
-      setCases(prev => {
-        const existingIndex = prev.findIndex(c => c._id === id);
-        if (existingIndex >= 0) {
-          const updated = [...prev];
-          updated[existingIndex] = caseData;
-          return updated;
-        }
-        return [...prev, caseData];
-      });
-      setSelectedCaseId(id);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch case");
     } finally {
       setIsLoading(false);
     }
