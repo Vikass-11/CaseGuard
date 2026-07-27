@@ -62,7 +62,7 @@ export const ComplaintForm: React.FC = () => {
     setErrorMessage("");
 
     try {
-      const response = await complaintService.createCase(formData);
+      await complaintService.createCase(formData);
       setSubmitStatus("success");
       
       // Reset form on success
@@ -75,8 +75,6 @@ export const ComplaintForm: React.FC = () => {
         threatLevel: "",
         statement: ""
       });
-      
-      console.log("Case created:", response);
     } catch (error) {
       setSubmitStatus("error");
       setErrorMessage(error instanceof Error ? error.message : "Failed to submit case");
