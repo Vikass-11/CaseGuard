@@ -1,8 +1,14 @@
 const express = require("express");
+const cors = require("cors");
 const caseRoutes = require("./routes/caseRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 
 const app = express();
+
+app.use(cors({
+  origin: ["http://localhost:5173", "http://localhost:3000"],
+  credentials: true
+}));
 
 app.use(express.json());
 
