@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Shield } from "lucide-react";
 import { ComplaintForm } from "./components/ComplaintForm";
 import { CaseDashboard } from "./components/CaseDashboard";

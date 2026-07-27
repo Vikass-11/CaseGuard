@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Shield, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
-import { CaseCreate } from "../types/complaint";
+import type { CaseCreate } from "../types/complaint";
 import { complaintService } from "../services/complaintService";
 
 export const ComplaintForm: React.FC = () => {
