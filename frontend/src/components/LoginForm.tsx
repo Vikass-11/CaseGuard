@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth, Role } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const LoginForm: React.FC = () => {

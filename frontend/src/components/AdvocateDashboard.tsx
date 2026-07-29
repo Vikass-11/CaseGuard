@@ -159,4 +159,5 @@ const AdvocateDashboard: React.FC = () => {
   );
 };
 
+export { AdvocateDashboard };
 export default AdvocateDashboard;
