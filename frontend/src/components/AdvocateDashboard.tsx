@@ -1,162 +1,163 @@
-import { useState } from "react";
-import { Shield, Search, Filter, Download, FileText, AlertTriangle, TrendingUp, MoreVertical } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import type { Case } from "../types/complaint";
+import React, { useState, useEffect } from 'react';
+import SearchBar from './SearchBar';
 
-export const AdvocateDashboard: React.FC = () => {
-  const { user, logout } = useAuth();
-  const [cases] = useState<Case[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterSeverity, setFilterSeverity] = useState<string>("all");
+// Mock types
+interface Case {
+  id: string;
+  title: string;
+  status: 'PENDING' | 'URGENT' | 'IN_REVIEW' | 'RESOLVED' | 'CLOSED';
+  threatLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  abuseCategories: string[];
+  createdAt: string;
+}
 
-  const filteredCases = cases.filter(caseItem => {
-    const matchesSearch = caseItem.victimName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         caseItem._id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSeverity = filterSeverity === "all" || caseItem.analysis.severity === filterSeverity;
-    return matchesSearch && matchesSeverity;
-  });
+const AdvocateDashboard: React.FC = () => {
+  const [cases, setCases] = useState<Case[]>([]);
+  const [filteredCases, setFilteredCases] = useState<Case[]>([]);
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [threatFilter, setThreatFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const getSeverityColor = (severity: string | null): string => {
-    switch (severity) {
-      case "high": return "severity-high";
-      case "medium": return "severity-medium";
-      case "low": return "severity-low";
-      default: return "severity-unknown";
+  useEffect(() => {
+    // In a real application, fetch from /api/cases
+    const mockCases: Case[] = [
+      { id: '1', title: 'Workplace Harassment Incident', status: 'URGENT', threatLevel: 'HIGH', abuseCategories: ['Harassment'], createdAt: '2023-10-01T10:00:00Z' },
+      { id: '2', title: 'Online Defamation', status: 'PENDING', threatLevel: 'LOW', abuseCategories: ['Defamation'], createdAt: '2023-10-02T12:00:00Z' },
+      { id: '3', title: 'Domestic Violence Report', status: 'IN_REVIEW', threatLevel: 'HIGH', abuseCategories: ['Domestic Violence'], createdAt: '2023-10-03T09:30:00Z' },
+    ];
+    setCases(mockCases);
+    setFilteredCases(mockCases);
+  }, []);
+
+  useEffect(() => {
+    let result = cases;
+
+    // Search filtering
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      result = result.filter(c => 
+        c.title.toLowerCase().includes(lowerQuery) || 
+        c.abuseCategories.some(cat => cat.toLowerCase().includes(lowerQuery))
+      );
     }
-  };
+
+    // Status filtering
+    if (statusFilter !== 'ALL') {
+      result = result.filter(c => c.status === statusFilter);
+    }
+
+    // Threat filtering
+    if (threatFilter !== 'ALL') {
+      result = result.filter(c => c.threatLevel === threatFilter);
+    }
+
+    setFilteredCases(result);
+  }, [cases, searchQuery, statusFilter, threatFilter]);
 
   return (
-    <div className="portal-container">
-      <header className="portal-header">
-        <div className="header-content">
-          <div className="brand">
-            <Shield className="shield-icon" size={32} />
-            <h1>CaseGuard</h1>
-            <span className="role-badge">Advocate Dashboard</span>
-          </div>
-          <div className="user-info">
-            <span className="user-name">{user?.name}</span>
-            <span className="user-org">{user?.organization}</span>
-            <button onClick={logout} className="logout-button">
-              Logout
-            </button>
+    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 font-outfit">
+          Advocate Dashboard
+        </h1>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between border border-gray-100 dark:border-gray-700">
+          <SearchBar onSearch={setSearchQuery} placeholder="Search cases or categories..." />
+          
+          <div className="flex gap-4 w-full sm:w-auto">
+            <select
+              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="URGENT">Urgent</option>
+              <option value="IN_REVIEW">In Review</option>
+              <option value="RESOLVED">Resolved</option>
+            </select>
+
+            <select
+              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              value={threatFilter}
+              onChange={(e) => setThreatFilter(e.target.value)}
+            >
+              <option value="ALL">All Threats</option>
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
           </div>
         </div>
-      </header>
 
-      <main className="portal-main">
-        <div className="portal-sidebar">
-          <nav className="sidebar-nav">
-            <div className="nav-item active">
-              <FileText size={20} />
-              <span>Case Queue</span>
-            </div>
-            <div className="nav-item">
-              <AlertTriangle size={20} />
-              <span>High Priority</span>
-            </div>
-            <div className="nav-item">
-              <TrendingUp size={20} />
-              <span>Analytics</span>
-            </div>
-          </nav>
-        </div>
-
-        <div className="portal-content">
-          <div className="content-header">
-            <h2>Case Queue</h2>
-            <p className="content-subtitle">
-              Manage and review submitted cases
-            </p>
-          </div>
-
-          <div className="dashboard-controls">
-            <div className="search-bar">
-              <Search size={18} />
-              <input
-                type="text"
-                placeholder="Search by name or case ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            <div className="filter-controls">
-              <select
-                value={filterSeverity}
-                onChange={(e) => setFilterSeverity(e.target.value)}
-                className="filter-select"
-              >
-                <option value="all">All Severity</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-
-              <button className="filter-button">
-                <Filter size={18} />
-                More Filters
-              </button>
-            </div>
-          </div>
-
-          <div className="cases-table-container">
-            <table className="cases-table">
-              <thead>
-                <tr>
-                  <th>Case ID</th>
-                  <th>Victim Name</th>
-                  <th>Abuse Type</th>
-                  <th>Severity</th>
-                  <th>Risk Score</th>
-                  <th>Date</th>
-                  <th>Actions</th>
+        <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900/50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Case Title
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Status
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Threat Level
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Date
+                </th>
+                <th scope="col" className="relative px-6 py-3">
+                  <span className="sr-only">View</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredCases.map((c) => (
+                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{c.title}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{c.abuseCategories.join(', ')}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                      ${c.status === 'URGENT' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' : 
+                        c.status === 'IN_REVIEW' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 
+                        'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'}`}>
+                      {c.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                      ${c.threatLevel === 'HIGH' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' : 
+                        c.threatLevel === 'MEDIUM' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' : 
+                        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                      {c.threatLevel}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(c.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <a href={`/advocate/case/${c.id}`} className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">
+                      View details
+                    </a>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filteredCases.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="empty-state">
-                      No cases found matching your criteria
-                    </td>
-                  </tr>
-                ) : (
-                  filteredCases.map((caseItem) => (
-                    <tr key={caseItem._id}>
-                      <td className="case-id">{caseItem._id.slice(0, 8)}...</td>
-                      <td>{caseItem.victimName}</td>
-                      <td>{caseItem.abuseType}</td>
-                      <td>
-                        <span className={`severity-badge ${getSeverityColor(caseItem.analysis.severity)}`}>
-                          {caseItem.analysis.severity || "Unknown"}
-                        </span>
-                      </td>
-                      <td>{caseItem.analysis.riskScore ?? "N/A"}</td>
-                      <td>{new Date(caseItem.createdAt).toLocaleDateString()}</td>
-                      <td>
-                        <button className="action-button">
-                          <MoreVertical size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="dashboard-actions">
-            <button className="export-button">
-              <Download size={18} />
-              Export to PDF
-            </button>
-            <button className="export-button">
-              <Download size={18} />
-              Export to JSON
-            </button>
-          </div>
+              ))}
+              {filteredCases.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    No cases found matching your criteria.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
+
+export { AdvocateDashboard };
+export default AdvocateDashboard;
