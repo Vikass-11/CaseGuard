@@ -1,65 +1,24 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const caseSchema = new mongoose.Schema(
-  {
-    victimName: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    age: {
-      type: Number,
-      required: true,
-      min: 0
-    },
-    abuseType: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    incidentDescription: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    frequency: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    threatLevel: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    statement: {
-      type: String,
-      default: "",
-      trim: true
-    },
-    analysis: {
-      severity: {
-        type: String,
-        enum: ["low", "medium", "high"],
-        default: null
-      },
-      riskScore: {
-        type: Number,
-        min: 0,
-        max: 100,
-        default: null
-      },
-      abusePatterns: {
-        type: [String],
-        default: []
-      },
-      generatedBrief: {
-        type: String,
-        default: ""
-      }
-    }
+const caseSchema = new mongoose.Schema({
+  complainantId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  title: { type: String, required: true },
+  descriptionRaw: { type: String, required: true }, // Encrypted raw text for restricted advocate review
+  descriptionAnonymized: { type: String, required: true }, // PII redacted text for general display
+  status: { 
+    type: String, 
+    enum: ['PENDING', 'URGENT', 'IN_REVIEW', 'RESOLVED', 'CLOSED'], 
+    default: 'PENDING' 
   },
-  { timestamps: true }
-);
+  threatLevel: { 
+    type: String, 
+    enum: ['LOW', 'MEDIUM', 'HIGH'], 
+    default: 'LOW' 
+  },
+  riskScore: { type: Number, default: 0, min: 0, max: 100 },
+  abuseCategories: [{ type: String }],
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
 
-module.exports = mongoose.model("Case", caseSchema);
+module.exports = mongoose.model('Case', caseSchema);
