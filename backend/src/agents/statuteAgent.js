@@ -1,0 +1,70 @@
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+const getGenAI = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.warn('GEMINI_API_KEY not found. Using fallback mock for Statute Agent.');
+    return null;
+  }
+  return new GoogleGenerativeAI(apiKey);
+};
+
+class StatuteMappingAgent {
+  constructor() {
+    this.name = 'StatuteMappingAgent';
+  }
+
+  async mapStatutes(caseData) {
+    const genAI = getGenAI();
+
+    if (!genAI) {
+      // Mock fallback logic
+      return [
+        {
+          code: 'Title VII of the Civil Rights Act of 1964',
+          description: 'Prohibits employment discrimination based on race, color, religion, sex and national origin.',
+          relevance: 'High relevance due to workplace harassment allegations.'
+        },
+        {
+          code: 'California FEHA',
+          description: 'Fair Employment and Housing Act prohibiting harassment and discrimination.',
+          relevance: 'Applicable based on location (San Francisco).'
+        }
+      ];
+    }
+
+    try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+      const prompt = `
+        You are a specialized Legal Statute & Precedent Mapping Agent.
+        Analyze the provided case facts and map them to specific legal statutes (e.g., IT Act, IPC sections, or relevant legal codes).
+        Return an array of JSON objects strictly in this format, with no markdown code blocks:
+
+        [
+          {
+            "code": "Legal Code/Section Name",
+            "description": "Brief description of the statute.",
+            "relevance": "Why this is relevant to the case."
+          }
+        ]
+
+        Case Title: ${caseData.title}
+        Case Facts: ${caseData.descriptionRaw}
+        Abuse Categories: ${caseData.abuseCategories.join(', ')}
+      `;
+
+      const result = await model.generateContent(prompt);
+      const responseText = result.response.text().trim();
+      
+      // Strip markdown code block markers if present
+      const cleanJson = responseText.replace(/^```json/m, '').replace(/```$/m, '').trim();
+      
+      return JSON.parse(cleanJson);
+    } catch (error) {
+      console.error('[StatuteMappingAgent] Error mapping statutes:', error);
+      throw new Error('Failed to map statutes.');
+    }
+  }
+}
+
+module.exports = new StatuteMappingAgent();
