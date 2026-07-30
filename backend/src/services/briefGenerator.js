@@ -1,18 +1,9 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-
-const getGenAI = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.warn('GEMINI_API_KEY not found. Using fallback mock for Legal Brief Generator.');
-    return null;
-  }
-  return new GoogleGenerativeAI(apiKey);
-};
+const { getOpenAIClient } = require('../utils/openaiClient');
 
 const generateLegalBrief = async (caseData) => {
-  const genAI = getGenAI();
+  const openai = getOpenAIClient();
 
-  if (!genAI) {
+  if (!openai) {
     // Mock fallback logic
     return {
       summary: 'Mock Summary: The complainant reports repeated harassment incidents in the workplace over the last three months.',
@@ -30,7 +21,6 @@ const generateLegalBrief = async (caseData) => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
     const prompt = `
       You are an expert Legal Assistant. Review the following case details and generate a formal, structured legal brief.
       The output must strictly be a JSON object with no additional markdown, markdown code block wrappers, or explanation text.
@@ -50,13 +40,14 @@ const generateLegalBrief = async (caseData) => {
       Abuse Categories: ${caseData.abuseCategories.join(', ')}
     `;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text().trim();
-    
-    // Strip markdown code block markers if present
-    const cleanJson = responseText.replace(/^```json/m, '').replace(/```$/m, '').trim();
-    
-    return JSON.parse(cleanJson);
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+    });
+
+    const responseText = response.choices[0].message.content.trim();
+    return JSON.parse(responseText);
   } catch (error) {
     console.error('Error in Legal Brief Generator:', error);
     throw new Error('Failed to generate legal brief.');

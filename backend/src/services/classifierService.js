@@ -1,18 +1,9 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-
-const getGenAI = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.warn('GEMINI_API_KEY not found. Using fallback mock for Classifier.');
-    return null;
-  }
-  return new GoogleGenerativeAI(apiKey);
-};
+const { getOpenAIClient } = require('../utils/openaiClient');
 
 const classifyThreat = async (text) => {
-  const genAI = getGenAI();
+  const openai = getOpenAIClient();
 
-  if (!genAI) {
+  if (!openai) {
     // Mock fallback logic
     return {
       threatLevel: 'MEDIUM',
@@ -22,7 +13,6 @@ const classifyThreat = async (text) => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
     const prompt = `
       You are a legal threat classifier. Review the following complaint text.
       Evaluate the threat level and risk score, and categorize the type of abuse.
@@ -38,13 +28,14 @@ const classifyThreat = async (text) => {
       "${text}"
     `;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text().trim();
-    
-    // Strip markdown code block markers if present
-    const cleanJson = responseText.replace(/^```json/m, '').replace(/```$/m, '').trim();
-    
-    return JSON.parse(cleanJson);
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+    });
+
+    const responseText = response.choices[0].message.content.trim();
+    return JSON.parse(responseText);
   } catch (error) {
     console.error('Error in AI Threat Classifier:', error);
     throw new Error('Failed to classify threat.');
