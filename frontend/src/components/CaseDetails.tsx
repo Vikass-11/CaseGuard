@@ -13,7 +13,15 @@ interface CaseDetail {
   descriptionRaw: string;
   descriptionAnonymized: string;
   createdAt: string;
-  complainantName: string; // From populated user
+  complainantName: string;
+  analysis?: {
+    structuredBrief?: {
+      summary?: string;
+      keyFacts?: string[];
+      timeline?: { date: string; event: string }[];
+      potentialViolations?: string[];
+    }
+  }
 }
 
 const CaseDetails: React.FC = () => {
@@ -22,34 +30,46 @@ const CaseDetails: React.FC = () => {
   const [evidenceData, setEvidenceData] = useState<Evidence[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Example role fetching logic (usually from AuthContext)
   const isAdvocate = true; // Hardcoded for this mockup
 
   useEffect(() => {
-    // In a real app, fetch from /api/cases/:id and /api/cases/:id/evidence
-    const mockCase: CaseDetail = {
-      id: id || '1',
-      title: 'Workplace Harassment Incident',
-      status: 'URGENT',
-      threatLevel: 'HIGH',
-      riskScore: 85,
-      abuseCategories: ['Harassment', 'Hostile Work Environment'],
-      descriptionRaw: 'My boss John Doe has been repeatedly harassing me at the TechCorp office in San Francisco.',
-      descriptionAnonymized: 'My boss [PERSON_NAME] has been repeatedly harassing me at the [ORGANIZATION] office in [LOCATION].',
-      createdAt: '2023-10-01T10:00:00Z',
-      complainantName: 'Jane Smith'
+    const fetchCaseDetails = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:5000/api/case/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setCaseData({
+            id: data._id,
+            title: data.title || `${data.abuseType} Incident`,
+            status: data.status,
+            threatLevel: data.threatLevel,
+            riskScore: data.riskScore || 0,
+            abuseCategories: data.abuseCategories || [],
+            descriptionRaw: data.descriptionRaw || '',
+            descriptionAnonymized: data.descriptionAnonymized || '',
+            createdAt: data.createdAt,
+            complainantName: data.victimName,
+            analysis: data.analysis
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch case details', error);
+      } finally {
+        setLoading(false);
+      }
     };
+
+    fetchCaseDetails();
     
-    const mockEvidence: Evidence[] = [
+    // Mock evidence for now
+    setEvidenceData([
       { id: 'e1', filename: 'email_thread.pdf', fileUrl: '#', fileType: 'document', uploadDate: '2023-10-01T10:30:00Z', uploadedBy: 'user_1' },
       { id: 'e2', filename: 'incident_photo.jpg', fileUrl: '#', fileType: 'image', uploadDate: '2023-10-01T11:00:00Z', uploadedBy: 'user_1' }
-    ];
-
-    setTimeout(() => {
-      setCaseData(mockCase);
-      setEvidenceData(mockEvidence);
-      setLoading(false);
-    }, 500);
+    ]);
   }, [id]);
 
   if (loading) {
@@ -125,6 +145,43 @@ const CaseDetails: React.FC = () => {
                 <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2 bg-red-50 dark:bg-red-900/10 p-4 rounded-md border border-red-200 dark:border-red-900/50">
                   <p className="mb-2 text-xs text-red-600 dark:text-red-400 font-semibold">RESTRICTED VIEW: For legal advocates only.</p>
                   {caseData.descriptionRaw}
+                </dd>
+              </div>
+            )}
+            
+            {caseData.analysis?.structuredBrief && Object.keys(caseData.analysis.structuredBrief).length > 0 && (
+              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-indigo-600 dark:text-indigo-400 flex items-center">
+                  <span className="mr-2">🤖</span> AI Legal Brief
+                </dt>
+                <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2 bg-indigo-50 dark:bg-indigo-900/10 p-4 rounded-md border border-indigo-200 dark:border-indigo-900/50">
+                  <h4 className="font-semibold mb-2">Summary</h4>
+                  <p className="mb-4">{caseData.analysis.structuredBrief.summary}</p>
+                  
+                  <h4 className="font-semibold mb-2">Key Facts</h4>
+                  <ul className="list-disc pl-5 mb-4">
+                    {caseData.analysis.structuredBrief.keyFacts?.map((fact, idx) => (
+                      <li key={idx}>{fact}</li>
+                    ))}
+                  </ul>
+
+                  {caseData.analysis.structuredBrief.timeline && caseData.analysis.structuredBrief.timeline.length > 0 && (
+                    <>
+                      <h4 className="font-semibold mb-2">Timeline</h4>
+                      <ul className="list-disc pl-5 mb-4">
+                        {caseData.analysis.structuredBrief.timeline.map((event, idx) => (
+                          <li key={idx}><strong>{event.date}:</strong> {event.event}</li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+
+                  <h4 className="font-semibold mb-2">Potential Violations</h4>
+                  <ul className="list-disc pl-5">
+                    {caseData.analysis.structuredBrief.potentialViolations?.map((violation, idx) => (
+                      <li key={idx}>{violation}</li>
+                    ))}
+                  </ul>
                 </dd>
               </div>
             )}

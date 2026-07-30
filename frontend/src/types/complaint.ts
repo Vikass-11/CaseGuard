@@ -14,18 +14,32 @@ export interface CaseAnalysis {
   severity: "low" | "medium" | "high" | null;
   riskScore: number | null;
   abusePatterns: string[];
-  generatedBrief: string;
+  generatedBrief?: string;
+  structuredBrief?: {
+    summary?: string;
+    keyFacts?: string[];
+    timeline?: { date: string; event: string }[];
+    potentialViolations?: string[];
+  };
 }
 
 export interface Case {
   _id: string;
+  complainantId?: string;
+  title?: string;
   victimName: string;
   age: number;
   abuseType: string;
   incidentDescription: string;
   frequency: string;
   threatLevel: string;
+  aiThreatLevel?: string;
   statement: string;
+  descriptionRaw?: string;
+  descriptionAnonymized?: string;
+  status?: string;
+  riskScore?: number;
+  abuseCategories?: string[];
   analysis: CaseAnalysis;
   createdAt: string;
   updatedAt: string;

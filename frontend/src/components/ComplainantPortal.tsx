@@ -1,6 +1,7 @@
 import { Shield, FileText, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { ComplaintForm } from "./ComplaintForm";
+import LegalAssistantBot from "./LegalAssistantBot";
 
 export const ComplainantPortal: React.FC = () => {
   const { user, logout } = useAuth();
@@ -22,7 +23,7 @@ export const ComplainantPortal: React.FC = () => {
         </div>
       </header>
 
-      <main className="portal-main">
+      <main className="portal-main relative">
         <div className="portal-sidebar">
           <nav className="sidebar-nav">
             <div className="nav-item active">
@@ -48,7 +49,7 @@ export const ComplainantPortal: React.FC = () => {
             </p>
           </div>
 
-          <div className="case-form-container">
+          <div className="case-form-container relative">
             <ComplaintForm />
           </div>
 
@@ -70,7 +71,11 @@ export const ComplainantPortal: React.FC = () => {
             </div>
           </div>
         </div>
+        
+        {/* Floating AI Assistant */}
+        <LegalAssistantBot />
       </main>
     </div>
   );
 };
+

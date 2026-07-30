@@ -19,14 +19,32 @@ const AdvocateDashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    // In a real application, fetch from /api/cases
-    const mockCases: Case[] = [
-      { id: '1', title: 'Workplace Harassment Incident', status: 'URGENT', threatLevel: 'HIGH', abuseCategories: ['Harassment'], createdAt: '2023-10-01T10:00:00Z' },
-      { id: '2', title: 'Online Defamation', status: 'PENDING', threatLevel: 'LOW', abuseCategories: ['Defamation'], createdAt: '2023-10-02T12:00:00Z' },
-      { id: '3', title: 'Domestic Violence Report', status: 'IN_REVIEW', threatLevel: 'HIGH', abuseCategories: ['Domestic Violence'], createdAt: '2023-10-03T09:30:00Z' },
-    ];
-    setCases(mockCases);
-    setFilteredCases(mockCases);
+    const fetchCases = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/case/all', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const formattedCases = data.map((c: any) => ({
+            id: c._id,
+            title: c.title || `${c.abuseType} Incident`,
+            status: c.status,
+            threatLevel: c.threatLevel,
+            abuseCategories: c.abuseCategories || [],
+            createdAt: c.createdAt
+          }));
+          setCases(formattedCases);
+          setFilteredCases(formattedCases);
+        }
+      } catch (error) {
+        console.error('Failed to fetch cases', error);
+      }
+    };
+    fetchCases();
   }, []);
 
   useEffect(() => {
