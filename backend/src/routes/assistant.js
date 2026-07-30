@@ -1,16 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { getOpenAIClient } = require('../utils/openaiClient');
 const { authenticate } = require('../middlewares/auth');
-
-const getGenAI = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.warn('GEMINI_API_KEY not found. Using fallback mock for Legal Assistant Bot.');
-    return null;
-  }
-  return new GoogleGenerativeAI(apiKey);
-};
 
 const SYSTEM_PROMPT = `You are a compassionate, professional Legal Intake Assistant at CaseGuard, a legal-tech platform 
 for victims of abuse, harassment, and legal violations. Your role is to help complainants structure their statements 
@@ -32,9 +23,9 @@ router.post('/chat', authenticate, async (req, res) => {
     return res.status(400).json({ message: 'Message is required.' });
   }
 
-  const genAI = getGenAI();
+  const openai = getOpenAIClient();
 
-  if (!genAI) {
+  if (!openai) {
     // Mock fallback response
     const mockResponses = [
       "I understand this is difficult. Could you tell me when the first incident occurred?",
@@ -47,25 +38,25 @@ router.post('/chat', authenticate, async (req, res) => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
-
-    // Build conversation history for multi-turn chat
+    // Map existing history format (user/model) to OpenAI format (user/assistant)
     const chatHistory = (history || []).map(turn => ({
-      role: turn.role,
-      parts: [{ text: turn.content }]
+      role: turn.role === 'model' ? 'assistant' : 'user',
+      content: turn.content
     }));
 
-    const chat = model.startChat({
-      history: [
-        { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
-        { role: 'model', parts: [{ text: 'Understood. I am ready to assist complainants with empathy and legal precision.' }] },
-        ...chatHistory
-      ]
+    const messages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'assistant', content: 'Understood. I am ready to assist complainants with empathy and legal precision.' },
+      ...chatHistory,
+      { role: 'user', content: message }
+    ];
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: messages,
     });
 
-    const result = await chat.sendMessage(message);
-    const reply = result.response.text();
-
+    const reply = response.choices[0].message.content.trim();
     res.json({ reply });
   } catch (error) {
     console.error('[LegalAssistantBot] Error:', error);

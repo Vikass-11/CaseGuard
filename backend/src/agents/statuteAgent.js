@@ -1,13 +1,4 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-
-const getGenAI = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.warn('GEMINI_API_KEY not found. Using fallback mock for Statute Agent.');
-    return null;
-  }
-  return new GoogleGenerativeAI(apiKey);
-};
+const { getOpenAIClient } = require('../utils/openaiClient');
 
 class StatuteMappingAgent {
   constructor() {
@@ -15,9 +6,9 @@ class StatuteMappingAgent {
   }
 
   async mapStatutes(caseData) {
-    const genAI = getGenAI();
+    const openai = getOpenAIClient();
 
-    if (!genAI) {
+    if (!openai) {
       // Mock fallback logic
       return [
         {
@@ -34,7 +25,6 @@ class StatuteMappingAgent {
     }
 
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
       const prompt = `
         You are a specialized Legal Statute & Precedent Mapping Agent.
         Analyze the provided case facts and map them to specific legal statutes (e.g., IT Act, IPC sections, or relevant legal codes).
@@ -53,8 +43,12 @@ class StatuteMappingAgent {
         Abuse Categories: ${caseData.abuseCategories.join(', ')}
       `;
 
-      const result = await model.generateContent(prompt);
-      const responseText = result.response.text().trim();
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+      });
+
+      const responseText = response.choices[0].message.content.trim();
       
       // Strip markdown code block markers if present
       const cleanJson = responseText.replace(/^```json/m, '').replace(/```$/m, '').trim();
