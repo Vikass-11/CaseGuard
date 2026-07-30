@@ -2,13 +2,15 @@ const express = require("express");
 const {
   createCase,
   analyzeCase,
-  getCaseById
+  getCaseById,
+  getAllCases
 } = require("../controllers/caseController");
 
 const router = express.Router();
 
 router.post("/create", createCase);
 router.post("/analyze", analyzeCase);
+router.get("/all", getAllCases);
 router.get("/:id", getCaseById);
 
 module.exports = router;

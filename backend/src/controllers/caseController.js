@@ -1,5 +1,8 @@
 const Case = require("../models/Case");
 const { analyzeCaseData } = require("../services/analysisService");
+const { redactPII } = require("../services/redactionService");
+const { classifyThreat } = require("../services/classifierService");
+const { generateLegalBrief } = require("../services/briefGenerator");
 
 const createCase = async (req, res, next) => {
   try {
@@ -13,14 +16,58 @@ const createCase = async (req, res, next) => {
       statement
     } = req.body;
 
+    const descriptionRaw = `${incidentDescription} \n ${statement || ""}`.trim();
+    const title = `${abuseType} Incident for ${victimName}`;
+
+    // Execute AI Pipeline concurrently where possible
+    const [descriptionAnonymized, threatClassification] = await Promise.all([
+      redactPII(descriptionRaw).catch(() => descriptionRaw),
+      classifyThreat(descriptionRaw).catch(() => ({ threatLevel: 'MEDIUM', riskScore: 50, categories: [] }))
+    ]);
+
+    const partialCaseData = {
+      victimName,
+      abuseType,
+      descriptionRaw,
+      abuseCategories: threatClassification.categories || []
+    };
+
+    const structuredBrief = await generateLegalBrief(partialCaseData).catch(() => ({}));
+
+    // Fallback analyzeCaseData for generatedBrief text
+    const legacyAnalysis = analyzeCaseData({
+      abuseType,
+      frequency,
+      threatLevel,
+      incidentDescription,
+      statement,
+      victimName,
+      age
+    });
+
     const createdCase = await Case.create({
+      complainantId: req.user ? req.user._id : undefined,
+      title,
       victimName,
       age,
       abuseType,
       incidentDescription,
       frequency,
       threatLevel,
-      statement: statement || ""
+      statement: statement || "",
+      descriptionRaw,
+      descriptionAnonymized,
+      aiThreatLevel: threatClassification.threatLevel,
+      riskScore: threatClassification.riskScore,
+      abuseCategories: threatClassification.categories,
+      status: threatClassification.threatLevel === 'HIGH' ? 'URGENT' : 'PENDING',
+      analysis: {
+        severity: legacyAnalysis.severity,
+        riskScore: legacyAnalysis.riskScore,
+        abusePatterns: legacyAnalysis.abusePatterns,
+        generatedBrief: legacyAnalysis.generatedBrief,
+        structuredBrief
+      }
     });
 
     res.status(201).json({
@@ -76,8 +123,18 @@ const getCaseById = async (req, res, next) => {
   }
 };
 
+const getAllCases = async (req, res, next) => {
+  try {
+    const cases = await Case.find().sort({ createdAt: -1 });
+    return res.status(200).json(cases);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createCase,
   analyzeCase,
-  getCaseById
+  getCaseById,
+  getAllCases
 };

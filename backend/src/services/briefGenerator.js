@@ -35,9 +35,10 @@ const generateLegalBrief = async (caseData) => {
       }
 
       Case Details:
-      Title: ${caseData.title}
+      Victim Name: ${caseData.victimName}
+      Abuse Type: ${caseData.abuseType}
       Description (Raw): ${caseData.descriptionRaw}
-      Abuse Categories: ${caseData.abuseCategories.join(', ')}
+      Abuse Categories: ${caseData.abuseCategories?.join(', ') || 'None'}
     `;
 
     const response = await openai.chat.completions.create({
