@@ -15,7 +15,7 @@ import mongoose from 'mongoose';
 const app: Application = express();
 
 // Security Middleware
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(mongoSanitize());
 
 const authLimiter = rateLimit({
@@ -27,7 +27,12 @@ const authLimiter = rateLimit({
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://127.0.0.1:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+  credentials: true
+}));
 app.use(express.json());
 
 // Request logging middleware
