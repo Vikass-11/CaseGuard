@@ -16,7 +16,12 @@ const app: Application = express();
 
 // Security Middleware
 app.use(helmet({ crossOriginResourcePolicy: false }));
-app.use(mongoSanitize());
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.body) req.body = mongoSanitize.sanitize(req.body);
+  if (req.params) req.params = mongoSanitize.sanitize(req.params);
+  if (req.headers) req.headers = mongoSanitize.sanitize(req.headers) as any;
+  next();
+});
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
