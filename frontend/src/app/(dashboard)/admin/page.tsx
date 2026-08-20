@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { ShieldAlert } from 'lucide-react';
 
 export default function AdminPage() {
@@ -40,49 +39,55 @@ export default function AdminPage() {
     }
   };
 
-  if (loading) return <div>Loading admin data...</div>;
+  if (loading) return <div className="text-white text-center p-12">Loading admin data...</div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-3">
-        <ShieldAlert className="h-8 w-8 text-slate-800" />
+    <div className="space-y-8">
+      <div className="flex items-center space-x-4 mb-8">
+        <div className="h-12 w-12 bg-[#111113] rounded-xl border border-white/10 flex items-center justify-center">
+          <ShieldAlert className="h-6 w-6 text-white" strokeWidth={1.5} />
+        </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Admin Panel</h1>
-          <p className="text-slate-500">Manage users and view system audit logs.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-white uppercase" style={{ fontStretch: 'condensed' }}>Admin Panel</h1>
+          <p className="text-[#a1a1aa] text-sm tracking-wide mt-1">Manage users and view system audit logs.</p>
         </div>
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="logs">Audit Logs</TabsTrigger>
+        <TabsList className="bg-white/5 border border-white/10">
+          <TabsTrigger value="users" className="data-[state=active]:bg-white data-[state=active]:text-black">Users</TabsTrigger>
+          <TabsTrigger value="logs" className="data-[state=active]:bg-white data-[state=active]:text-black">Audit Logs</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="users" className="mt-4">
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+        <TabsContent value="users" className="mt-6">
+          <div className="bg-white/[0.02] rounded-3xl border border-white/10 overflow-hidden backdrop-blur-md">
             <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Current Role</TableHead>
-                  <TableHead>Change Role</TableHead>
+              <TableHeader className="border-b border-white/10">
+                <TableRow className="border-b border-white/10 hover:bg-transparent">
+                  <TableHead className="text-[10px] font-bold tracking-widest uppercase text-[#a1a1aa] py-6 px-8">Name</TableHead>
+                  <TableHead className="text-[10px] font-bold tracking-widest uppercase text-[#a1a1aa] py-6 px-8">Email</TableHead>
+                  <TableHead className="text-[10px] font-bold tracking-widest uppercase text-[#a1a1aa] py-6 px-8">Current Role</TableHead>
+                  <TableHead className="text-[10px] font-bold tracking-widest uppercase text-[#a1a1aa] py-6 px-8">Change Role</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((u) => (
-                  <TableRow key={u._id}>
-                    <TableCell className="font-medium">{u.name}</TableCell>
-                    <TableCell>{u.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>{u.role}</Badge>
+                  <TableRow key={u._id} className="border-b border-white/5 hover:bg-white/[0.04] transition-colors">
+                    <TableCell className="font-bold text-white text-sm tracking-wide py-6 px-8">{u.name}</TableCell>
+                    <TableCell className="text-[#a1a1aa] py-6 px-8">{u.email}</TableCell>
+                    <TableCell className="py-6 px-8">
+                      <span className={`inline-flex items-center px-3 py-1 text-[10px] font-bold uppercase tracking-widest border rounded-full ${
+                          u.role === 'admin' ? 'border-white text-white' : 'border-white/20 text-[#a1a1aa]'
+                        }`}>
+                          {u.role.replace('_', ' ')}
+                      </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-6 px-8">
                       <select 
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        className="block w-full bg-[#111113] border border-white/10 px-4 py-2 text-white focus:border-white/30 focus:ring-1 focus:ring-white/30 focus:outline-none transition-all duration-300 font-medium tracking-wide shadow-inner text-xs appearance-none rounded-lg"
                         value={u.role}
                         onChange={(e) => handleRoleChange(u._id, e.target.value)}
-                        disabled={u.email === 'admin@caseguard.com'} // Prevent changing main admin
+                        disabled={u.email === 'admin@caseguard.com'}
                       >
                         <option value="case_worker">Case Worker</option>
                         <option value="lawyer">Lawyer</option>
@@ -96,28 +101,30 @@ export default function AdminPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="logs" className="mt-4">
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+        <TabsContent value="logs" className="mt-6">
+          <div className="bg-white/[0.02] rounded-3xl border border-white/10 overflow-hidden backdrop-blur-md">
             <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow>
-                  <TableHead>Timestamp</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Entity</TableHead>
-                  <TableHead>Entity ID</TableHead>
+              <TableHeader className="border-b border-white/10">
+                <TableRow className="border-b border-white/10 hover:bg-transparent">
+                  <TableHead className="text-[10px] font-bold tracking-widest uppercase text-[#a1a1aa] py-6 px-8">Timestamp</TableHead>
+                  <TableHead className="text-[10px] font-bold tracking-widest uppercase text-[#a1a1aa] py-6 px-8">User</TableHead>
+                  <TableHead className="text-[10px] font-bold tracking-widest uppercase text-[#a1a1aa] py-6 px-8">Action</TableHead>
+                  <TableHead className="text-[10px] font-bold tracking-widest uppercase text-[#a1a1aa] py-6 px-8">Entity</TableHead>
+                  <TableHead className="text-[10px] font-bold tracking-widest uppercase text-[#a1a1aa] py-6 px-8">Entity ID</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {logs.map((log) => (
-                  <TableRow key={log._id}>
-                    <TableCell className="text-slate-500 text-sm">{new Date(log.timestamp).toLocaleString()}</TableCell>
-                    <TableCell>{log.userId?.name || log.userId}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="font-mono text-xs bg-slate-50">{log.action}</Badge>
+                  <TableRow key={log._id} className="border-b border-white/5 hover:bg-white/[0.04] transition-colors">
+                    <TableCell className="text-[#a1a1aa] text-xs py-6 px-8">{new Date(log.timestamp).toLocaleString()}</TableCell>
+                    <TableCell className="font-bold text-white text-sm tracking-wide py-6 px-8">{log.userId?.name || log.userId}</TableCell>
+                    <TableCell className="py-6 px-8">
+                      <span className="inline-flex items-center px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-white/20 text-[#a1a1aa] rounded-full">
+                        {log.action}
+                      </span>
                     </TableCell>
-                    <TableCell>{log.entityType}</TableCell>
-                    <TableCell className="font-mono text-xs text-slate-500">{log.entityId}</TableCell>
+                    <TableCell className="text-white font-medium py-6 px-8">{log.entityType}</TableCell>
+                    <TableCell className="font-mono text-xs text-[#a1a1aa] py-6 px-8">{log.entityId}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
