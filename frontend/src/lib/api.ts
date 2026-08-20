@@ -19,15 +19,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (typeof window !== 'undefined') {
-      const message = error.response?.data?.error?.message || error.response?.data?.message || error.message || 'An error occurred';
-      
       if (error.response?.status === 401) {
         toast.error('Session expired or unauthorized. Please log in again.');
-        // Could also trigger a redirect here if needed
-      } else if (error.response?.status === 403) {
-        toast.error('You do not have permission to perform this action.');
-      } else {
-        toast.error(message);
       }
     }
     return Promise.reject(error);
