@@ -34,6 +34,26 @@ services:
       - ./backend/src:/usr/src/app/src
 
   frontend:
+  pii-service:
+    build:
+      context: ./pii-service
+      dockerfile: Dockerfile
+    container_name: caseguard-pii-service
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=development
+      - PORT=5001
+      - MONGO_URI=mongodb://mongodb:27017/caseguard?replicaSet=rs0
+      - AWS_REGION=us-east-1
+      - USE_MOCK_COMPREHEND=true
+      - USE_MOCK_KMS=true
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./pii-service/src:/usr/src/app/src
+
     build:
       context: ./frontend
       dockerfile: Dockerfile
