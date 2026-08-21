@@ -1,23 +1,26 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
+import { tenantIsolationPlugin } from '../plugins/tenantIsolation';
 
 export interface IAuditLog extends Document {
-  userId: mongoose.Types.ObjectId;
-  action: string;
-  entityType: string;
-  entityId: mongoose.Types.ObjectId | null;
+  organizationId: mongoose.Types.ObjectId;
+  actorId: mongoose.Types.ObjectId;
+  collectionName: string;
+  documentId: mongoose.Types.ObjectId;
+  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  diff?: any;
   timestamp: Date;
-  metadata: Record<string, any>;
 }
 
-const AuditLogSchema: Schema = new Schema(
-  {
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    action: { type: String, required: true },
-    entityType: { type: String, required: true },
-    entityId: { type: Schema.Types.ObjectId },
-    timestamp: { type: Date, default: Date.now },
-    metadata: { type: Schema.Types.Mixed, default: {} },
-  }
-);
+const AuditLogSchema = new Schema<IAuditLog>({
+  organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true, index: true },
+  actorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  collectionName: { type: String, required: true },
+  documentId: { type: Schema.Types.ObjectId, required: true },
+  action: { type: String, enum: ['CREATE', 'UPDATE', 'DELETE'], required: true },
+  diff: { type: Schema.Types.Mixed }, // { field: { before, after } } pairs
+  timestamp: { type: Date, default: Date.now },
+});
+
+AuditLogSchema.plugin(tenantIsolationPlugin);
 
 export default mongoose.models.AuditLog || mongoose.model<IAuditLog>('AuditLog', AuditLogSchema);

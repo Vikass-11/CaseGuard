@@ -1,24 +1,20 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
+import { tenantIsolationPlugin } from '../plugins/tenantIsolation';
 
 export interface ICase extends Document {
-  userId: mongoose.Types.ObjectId;
-  title: string;
-  status: 'open' | 'closed' | 'archived';
+  organizationId: mongoose.Types.ObjectId;
+  status: 'INTAKE' | 'ANALYSIS' | 'REVIEW' | 'CLOSED';
+  createdBy: mongoose.Types.ObjectId;
   createdAt: Date;
-  updatedAt: Date;
 }
 
-const CaseSchema: Schema = new Schema(
-  {
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    title: { type: String, required: true },
-    status: { 
-      type: String, 
-      enum: ['open', 'closed', 'archived'], 
-      default: 'open' 
-    },
-  },
-  { timestamps: true }
-);
+const CaseSchema = new Schema<ICase>({
+  organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true, index: true },
+  status: { type: String, enum: ['INTAKE', 'ANALYSIS', 'REVIEW', 'CLOSED'], default: 'INTAKE' },
+  createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
+  createdAt: { type: Date, default: Date.now },
+});
+
+CaseSchema.plugin(tenantIsolationPlugin);
 
 export default mongoose.models.Case || mongoose.model<ICase>('Case', CaseSchema);
