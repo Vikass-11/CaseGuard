@@ -14,17 +14,16 @@ export async function anonymizeText(text: string, caseId: string) {
   
   if (process.env.USE_MOCK_COMPREHEND === 'true') {
     // Mock for local dev without AWS credentials
-    const match = text.match(/John Doe|Jane Smith/gi);
-    if (match) {
-      match.forEach(m => {
-        const idx = text.indexOf(m);
+    const matches = text.matchAll(/John Doe|Jane Smith/gi);
+    for (const match of matches) {
+      if (match.index !== undefined) {
         piiEntities.push({
           Type: 'PERSON',
           Score: 0.99,
-          BeginOffset: idx,
-          EndOffset: idx + m.length
+          BeginOffset: match.index,
+          EndOffset: match.index + match[0].length
         });
-      });
+      }
     }
   } else {
     const command = new DetectPiiEntitiesCommand({
