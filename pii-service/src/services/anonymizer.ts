@@ -32,7 +32,7 @@ export async function anonymizeText(text: string, caseId: string) {
       LanguageCode: 'en'
     });
     const res = await comprehend.send(command);
-    piiEntities = res.PiiEntities || [];
+    piiEntities = res.Entities || [];
   }
 
   // 2. Secondary Pass (Deterministic Regex for specific items)
