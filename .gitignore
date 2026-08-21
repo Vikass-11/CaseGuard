@@ -18,3 +18,5 @@ backend*.log
 .env
 .env.local
 .env*.local
+
+DV_Case_Analyzer_10_Module_Build_Prompt.md

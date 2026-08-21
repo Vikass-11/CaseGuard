@@ -1,12 +1,9 @@
-import express from 'express';
-import { register, login } from '../controllers/AuthController';
+import { Router } from 'express';
+import { register, login } from '../controllers/authController';
 
-const router = express.Router();
+const router = Router();
 
 router.post('/register', register);
 router.post('/login', login);
-router.post('/logout', (req, res) => {
-  res.json({ message: 'Logout successful. Client should remove token.' });
-});
 
 export default router;
