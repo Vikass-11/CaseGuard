@@ -35,6 +35,22 @@ services:
 
   frontend:
   pii-service:
+  research-service:
+    build:
+      context: ./research-service
+      dockerfile: Dockerfile
+    container_name: caseguard-research-service
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://mongodb:27017/caseguard?replicaSet=rs0
+      - AWS_REGION=us-east-1
+      - USE_MOCK_BEDROCK=true
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./research-service/src:/usr/src/app/src
+
     build:
       context: ./pii-service
       dockerfile: Dockerfile
