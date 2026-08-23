@@ -35,11 +35,23 @@ services:
 
   frontend:
   pii-service:
-  research-service:
+  knowledge-service:
+  screener-service:
     build:
-      context: ./research-service
+      context: ./screener-service
       dockerfile: Dockerfile
-    container_name: caseguard-research-service
+    container_name: caseguard-screener-service
+    environment:
+      - NODE_ENV=development
+    ports:
+      - "5003:5003"
+    volumes:
+      - ./screener-service/src:/usr/src/app/src
+
+    build:
+      context: ./knowledge-service
+      dockerfile: Dockerfile
+    container_name: caseguard-knowledge-service
     environment:
       - NODE_ENV=development
       - MONGO_URI=mongodb://mongodb:27017/caseguard?replicaSet=rs0
@@ -49,7 +61,7 @@ services:
       mongodb:
         condition: service_healthy
     volumes:
-      - ./research-service/src:/usr/src/app/src
+      - ./knowledge-service/src:/usr/src/app/src
 
     build:
       context: ./pii-service
