@@ -58,7 +58,7 @@ export default function LawyerBriefPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex justify-between items-center print:hidden">
-        <Button variant="ghost" onClick={() => router.back()} className="text-slate-500 hover:text-slate-900">
+        <Button variant="ghost" onClick={() => router.back()} className="text-muted-foreground hover:text-foreground">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Case
         </Button>
         <div className="flex space-x-3">
@@ -74,10 +74,10 @@ export default function LawyerBriefPage() {
         </div>
       </div>
 
-      <Card className="shadow-lg border-slate-200">
-        <CardHeader className="bg-slate-50 border-b border-slate-200 print:bg-white print:border-none">
-          <CardTitle className="text-center text-2xl tracking-tight text-slate-800">Lawyer Case Brief</CardTitle>
-          <p className="text-center text-slate-500 mt-2 font-mono text-sm">Ref ID: {id}</p>
+      <Card className="shadow-sm border-border">
+        <CardHeader className="bg-muted/50 border-b border-border print:bg-white print:border-none">
+          <CardTitle className="text-center text-2xl tracking-tight text-foreground">Lawyer Case Brief</CardTitle>
+          <p className="text-center text-muted-foreground mt-2 font-mono text-sm">Ref ID: {id}</p>
         </CardHeader>
         <CardContent className="p-0">
           <Textarea 
