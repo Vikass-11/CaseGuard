@@ -20,10 +20,8 @@ interface EvidenceCitationProps {
 export function EvidenceCitation({ children, evidenceText, researchCitation }: EvidenceCitationProps) {
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <span className="cursor-pointer border-b border-dashed border-primary/50 hover:bg-muted transition-colors rounded-sm px-1">
-          {children}
-        </span>
+      <PopoverTrigger className="cursor-pointer border-b border-dashed border-primary/50 hover:bg-muted transition-colors rounded-sm px-1">
+        {children}
       </PopoverTrigger>
       <PopoverContent className="w-80 shadow-md">
         <div className="space-y-4">
