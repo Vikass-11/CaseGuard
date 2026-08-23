@@ -36,6 +36,18 @@ services:
   frontend:
   pii-service:
   knowledge-service:
+  screener-service:
+    build:
+      context: ./screener-service
+      dockerfile: Dockerfile
+    container_name: caseguard-screener-service
+    environment:
+      - NODE_ENV=development
+    ports:
+      - "5003:5003"
+    volumes:
+      - ./screener-service/src:/usr/src/app/src
+
     build:
       context: ./knowledge-service
       dockerfile: Dockerfile
