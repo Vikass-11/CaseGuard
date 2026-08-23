@@ -20,3 +20,9 @@ backend*.log
 .env*.local
 
 DV_Case_Analyzer_10_Module_Build_Prompt.md
+UI_Build_Prompt.md
+Module_1_Final_Plan.md
+Module_2_Final_Plan.md
+Module_3_Research_RAG_Plan.md
+Module_4_Legal_Referral_RAG_Plan.md
+Module_5_Final_Plan.md
