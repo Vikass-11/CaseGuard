@@ -1,15 +1,17 @@
 import mongoose, { Schema } from 'mongoose';
 
 export const tenantIsolationPlugin = (schema: Schema) => {
-  const requireOrgId = function (this: any, next: (err?: mongoose.CallbackError) => void) {
+  const requireOrgId = function (this: any) {
     const filter = this.getFilter();
     
-    if (!filter || !filter.organizationId) {
-      return next(new Error('organizationId is required in the query filter for tenant isolation.'));
+    // Bypass for unique validator which might not have organizationId
+    if (this._mongooseOptions && this._mongooseOptions.isUniqueValidator) {
+       return;
     }
-    
-    // Proceed normally if organizationId is present
-    next();
+
+    if (!filter || !filter.organizationId) {
+      throw new Error('organizationId is required in the query filter for tenant isolation.');
+    }
   };
 
   // Typecasting the hook events because Mongoose types can be strict about hook names
