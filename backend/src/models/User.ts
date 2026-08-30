@@ -6,6 +6,8 @@ export interface IUser extends Document {
   email: string;
   passwordHash: string;
   role: 'LAWYER' | 'CASE_WORKER' | 'ADMIN';
+  registrationNumber?: string;
+  requiresPasswordChange: boolean;
   createdAt: Date;
 }
 
@@ -15,6 +17,8 @@ const UserSchema = new Schema<IUser>({
   email: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
   role: { type: String, enum: ['LAWYER', 'CASE_WORKER', 'ADMIN'], default: 'CASE_WORKER' },
+  registrationNumber: { type: String },
+  requiresPasswordChange: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 
