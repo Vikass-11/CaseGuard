@@ -7,6 +7,7 @@ export interface TokenPayload {
   id: string;
   role: UserRole;
   organizationId: string;
+  requiresPasswordChange?: boolean;
   exp?: number;
 }
 
