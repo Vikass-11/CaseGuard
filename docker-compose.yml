@@ -33,9 +33,6 @@ services:
     volumes:
       - ./backend/src:/usr/src/app/src
 
-  frontend:
-  pii-service:
-  knowledge-service:
   screener-service:
     build:
       context: ./screener-service
@@ -48,6 +45,7 @@ services:
     volumes:
       - ./screener-service/src:/usr/src/app/src
 
+  knowledge-service:
     build:
       context: ./knowledge-service
       dockerfile: Dockerfile
@@ -63,6 +61,7 @@ services:
     volumes:
       - ./knowledge-service/src:/usr/src/app/src
 
+  pii-service:
     build:
       context: ./pii-service
       dockerfile: Dockerfile
@@ -82,6 +81,7 @@ services:
     volumes:
       - ./pii-service/src:/usr/src/app/src
 
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile

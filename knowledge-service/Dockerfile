@@ -4,5 +4,4 @@ COPY package*.json ./
 RUN npm install --legacy-peer-deps
 COPY . .
 RUN npm run build || true
-EXPOSE 5001
 CMD ["npx", "ts-node-dev", "--respawn", "--transpile-only", "src/server.ts"]

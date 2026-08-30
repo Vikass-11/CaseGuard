@@ -5,6 +5,7 @@ const api = axios.create({
 });
 
 import { toast } from 'sonner';
+import { logout } from './auth';
 
 // Add a request interceptor to inject the JWT token
 api.interceptors.request.use((config) => {
@@ -21,6 +22,7 @@ api.interceptors.response.use(
     if (typeof window !== 'undefined') {
       if (error.response?.status === 401) {
         toast.error('Session expired or unauthorized. Please log in again.');
+        logout();
       }
     }
     return Promise.reject(error);

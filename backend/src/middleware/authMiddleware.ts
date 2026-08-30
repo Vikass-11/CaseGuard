@@ -17,6 +17,9 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
       req.user = await User.findById(decoded.id).select('-passwordHash');
+      if (!req.user) {
+        throw new Error('User not found');
+      }
       next();
     } catch (error) {
       res.status(401).json({ message: 'Not authorized, token failed' });
