@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 };
 
 import Providers from '@/components/Providers';
+import ForcePasswordChangeModal from '@/components/ForcePasswordChangeModal';
 
 export default function RootLayout({
   children,
@@ -21,6 +22,7 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen bg-background text-foreground antialiased selection:bg-primary/10 selection:text-primary`}>
         <Providers>
           {children}
+          <ForcePasswordChangeModal />
         </Providers>
       </body>
     </html>
