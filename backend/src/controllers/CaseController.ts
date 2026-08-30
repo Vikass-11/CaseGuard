@@ -1,4 +1,5 @@
 import { Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import Case from '../models/Case';
 import CaseInput from '../models/CaseInput';
 import CaseStatement from '../models/CaseStatement';
@@ -9,7 +10,12 @@ import { AuthRequest } from '../middleware/authMiddleware';
 export const createCase = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { title } = req.body;
-    const newCase = await Case.create({ userId: req.user._id, title });
+    // For demo purposes, we will assign a new ObjectId for organizationId if not provided
+    const newCase = await Case.create({ 
+      createdBy: req.user._id, 
+      title,
+      organizationId: req.user.organizationId
+    });
     
     await AuditLog.create({ userId: req.user._id, action: 'CREATE_CASE', entityType: 'Case', entityId: newCase._id });
     res.status(201).json(newCase);
@@ -21,7 +27,10 @@ export const createCase = async (req: AuthRequest, res: Response, next: NextFunc
 export const getCases = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     // Basic filter: only show cases owned by user unless admin
-    const filter = req.user.role === 'admin' ? {} : { userId: req.user._id };
+    const filter: any = { organizationId: req.user.organizationId };
+    if (req.user.role !== 'admin' && req.user.role !== 'ADMIN') {
+      filter.createdBy = req.user._id;
+    }
     const cases = await Case.find(filter).sort({ createdAt: -1 });
     res.json(cases);
   } catch (error) {
@@ -32,7 +41,7 @@ export const getCases = async (req: AuthRequest, res: Response, next: NextFuncti
 export const getCaseById = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const caseDoc = await Case.findById(id);
+    const caseDoc = await Case.findOne({ _id: id, organizationId: req.user.organizationId });
     if (!caseDoc) {
       res.status(404);
       throw new Error('Case not found');
