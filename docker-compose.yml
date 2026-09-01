@@ -95,5 +95,19 @@ services:
     volumes:
       - ./frontend/src:/app/src
 
+  pattern-service:
+    build:
+      context: ./pattern-service
+      dockerfile: Dockerfile
+    container_name: caseguard-pattern-service
+    ports:
+      - "5004:5004"
+    environment:
+      - NODE_ENV=development
+      - PORT=5004
+      - USE_MOCK_LLM=true
+    volumes:
+      - ./pattern-service/src:/usr/src/app/src
+
 volumes:
   mongodb_data:
