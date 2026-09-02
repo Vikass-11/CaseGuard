@@ -6,7 +6,7 @@ export const analyzeCase = async (req: Request, res: Response, next: NextFunctio
     try {
         const { id } = req.params;
         const prediction = await MockMLService.generatePrediction(id);
-        await AuditLog.create({ userId: (req as any).user._id, action: 'ANALYZE_CASE', entityType: 'Case', entityId: id });
+        await AuditLog.create({ organizationId: (req as any).user.organizationId, actorId: (req as any).user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
         res.json(prediction);
     }
     catch (error) {
@@ -18,7 +18,7 @@ export const generateBrief = async (req: Request, res: Response, next: NextFunct
     try {
         const { id } = req.params;
         const brief = await MockMLService.generateBrief(id);
-        await AuditLog.create({ userId: (req as any).user._id, action: 'GENERATE_BRIEF', entityType: 'Case', entityId: id });
+        await AuditLog.create({ organizationId: (req as any).user.organizationId, actorId: (req as any).user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
         res.json(brief);
     }
     catch (error) {
@@ -31,7 +31,7 @@ export const generateRecommendations = async (req: Request, res: Response, next:
         const { id } = req.params;
         const prediction = await MockMLService.generatePrediction(id);
         const recommendations = await MockMLService.generateRecommendations(id, prediction.severity);
-        await AuditLog.create({ userId: (req as any).user._id, action: 'GENERATE_RECOMMENDATIONS', entityType: 'Case', entityId: id });
+        await AuditLog.create({ organizationId: (req as any).user.organizationId, actorId: (req as any).user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
         res.json(recommendations);
     }
     catch (error) {
