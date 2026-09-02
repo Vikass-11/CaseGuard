@@ -6,7 +6,7 @@ import { AuthRequest } from '../middleware/authMiddleware';
 
 export const getUsers = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const users = await User.find().select('-passwordHash');
+    const users = await User.find({ organizationId: req.user.organizationId }).select('-passwordHash');
     res.json(users);
   } catch (error) {
     next(error);
@@ -37,7 +37,7 @@ export const createUser = async (req: AuthRequest, res: Response, next: NextFunc
       requiresPasswordChange: true
     });
 
-    await AuditLog.create({ userId: req.user._id, action: 'CREATE_USER', entityType: 'User', entityId: newUser._id });
+    await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'CREATE', collectionName: 'User', documentId: newUser._id });
     
     // Return user without password
     const userResponse = await User.findById(newUser._id).select('-passwordHash');
@@ -58,16 +58,46 @@ export const updateUserRole = async (req: AuthRequest, res: Response, next: Next
       throw new Error('User not found');
     }
 
-    await AuditLog.create({ userId: req.user._id, action: 'UPDATE_USER_ROLE', entityType: 'User', entityId: user._id });
+    await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'UPDATE', collectionName: 'User', documentId: user._id });
     res.json(user);
   } catch (error) {
     next(error);
   }
 };
 
+export const deleteUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    
+    if (id === req.user._id.toString()) {
+      res.status(400);
+      throw new Error('You cannot delete your own account');
+    }
+
+    const user = await User.findOneAndDelete({ _id: id, organizationId: req.user.organizationId });
+    if (!user) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+
+    await AuditLog.create({ 
+      organizationId: req.user.organizationId, 
+      actorId: req.user._id, 
+      action: 'DELETE', 
+      collectionName: 'User', 
+      documentId: user._id 
+    });
+
+    res.json({ message: 'User deleted' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 export const getAuditLogs = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const logs = await AuditLog.find().sort({ timestamp: -1 }).populate('userId', 'name email');
+    const logs = await AuditLog.find({ organizationId: req.user.organizationId }).sort({ timestamp: -1 }).populate('actorId', 'name email');
     res.json(logs);
   } catch (error) {
     next(error);

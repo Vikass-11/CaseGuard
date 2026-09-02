@@ -17,7 +17,7 @@ export const createCase = async (req: AuthRequest, res: Response, next: NextFunc
       organizationId: req.user.organizationId
     });
     
-    await AuditLog.create({ userId: req.user._id, action: 'CREATE_CASE', entityType: 'Case', entityId: newCase._id });
+    await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'CREATE', collectionName: 'Case', documentId: newCase._id });
     res.status(201).json(newCase);
   } catch (error) {
     next(error);
@@ -49,7 +49,7 @@ export const getCaseById = async (req: AuthRequest, res: Response, next: NextFun
 
     const inputs = await CaseInput.findOne({ caseId: id });
     const statement = await CaseStatement.findOne({ caseId: id });
-    const timeline = await TimelineEvent.find({ caseId: id }).sort({ date: 1 });
+    const timeline = await TimelineEvent.find({ caseId: id, organizationId: req.user.organizationId }).sort({ date: 1 });
 
     res.json({ case: caseDoc, inputs, statement, timeline });
   } catch (error) {
@@ -61,7 +61,7 @@ export const updateCaseInput = async (req: AuthRequest, res: Response, next: Nex
   try {
     const { id } = req.params;
     const input = await CaseInput.findOneAndUpdate({ caseId: id }, { ...req.body, caseId: id }, { new: true, upsert: true });
-    await AuditLog.create({ userId: req.user._id, action: 'UPDATE_CASE_INPUT', entityType: 'Case', entityId: id });
+    await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'UPDATE', collectionName: 'CaseInput', documentId: input._id });
     res.json(input);
   } catch (error) {
     next(error);
@@ -72,7 +72,7 @@ export const updateCaseStatement = async (req: AuthRequest, res: Response, next:
   try {
     const { id } = req.params;
     const statement = await CaseStatement.findOneAndUpdate({ caseId: id }, { ...req.body, caseId: id }, { new: true, upsert: true });
-    await AuditLog.create({ userId: req.user._id, action: 'UPDATE_CASE_STATEMENT', entityType: 'Case', entityId: id });
+    await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'UPDATE', collectionName: 'CaseStatement', documentId: statement._id });
     res.json(statement);
   } catch (error) {
     next(error);
@@ -82,8 +82,8 @@ export const updateCaseStatement = async (req: AuthRequest, res: Response, next:
 export const addTimelineEvent = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const event = await TimelineEvent.create({ ...req.body, caseId: id });
-    await AuditLog.create({ userId: req.user._id, action: 'ADD_TIMELINE_EVENT', entityType: 'Case', entityId: id });
+    const event = await TimelineEvent.create({ ...req.body, caseId: id, organizationId: req.user.organizationId });
+    await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'CREATE', collectionName: 'TimelineEvent', documentId: event._id });
     res.status(201).json(event);
   } catch (error) {
     next(error);
