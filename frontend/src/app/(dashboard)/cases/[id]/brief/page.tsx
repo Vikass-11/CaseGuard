@@ -31,10 +31,10 @@ export default function LawyerBriefPage() {
 
   useEffect(() => {
     // Generate on first load if content is empty
-    if (!content && !generateMutation.isPending && !generateMutation.isSuccess) {
+    if (!content && !generateMutation.isPending && !generateMutation.isSuccess && !generateMutation.isError) {
       generateMutation.mutate();
     }
-  }, [id, content, generateMutation]);
+  }, [id, content, generateMutation.isPending, generateMutation.isSuccess, generateMutation.isError]);
 
   const handleSave = () => {
     toast.promise(
