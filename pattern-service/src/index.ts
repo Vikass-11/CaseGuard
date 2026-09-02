@@ -13,7 +13,7 @@ app.use(express.json());
 
 app.use('/api', patternRoutes);
 
-app.get('/health', (req, res) => {
+app.get('/health', (req: express.Request, res: express.Response) => {
   res.json({ status: 'ok', service: 'pattern-service' });
 });
 
