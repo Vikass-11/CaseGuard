@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import mongoSanitize from 'express-mongo-sanitize';
 import { connectDB } from './config/db';
 import authRoutes from './routes/authRoutes';
 import adminRoutes from './routes/adminRoutes';
@@ -26,6 +27,7 @@ const apiLimiter = rateLimit({
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(mongoSanitize());
 app.use('/api/', apiLimiter);
 
 // Define Routes
