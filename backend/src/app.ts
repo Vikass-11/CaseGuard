@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { connectDB } from './config/db';
 import authRoutes from './routes/authRoutes';
 import adminRoutes from './routes/adminRoutes';
@@ -14,6 +15,7 @@ const app = express();
 connectDB();
 
 // Init Middleware
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
