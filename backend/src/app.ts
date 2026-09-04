@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { connectDB } from './config/db';
 import authRoutes from './routes/authRoutes';
 import adminRoutes from './routes/adminRoutes';
@@ -14,10 +15,18 @@ const app = express();
 // Connect Database
 connectDB();
 
+// Rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+
 // Init Middleware
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use('/api/', apiLimiter);
 
 // Define Routes
 app.use('/api/auth', authRoutes);
