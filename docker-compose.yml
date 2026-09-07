@@ -109,5 +109,19 @@ services:
     volumes:
       - ./pattern-service/src:/usr/src/app/src
 
+  risk-service:
+    build:
+      context: ./risk-service
+      dockerfile: Dockerfile
+    container_name: caseguard-risk-service
+    ports:
+      - "5005:5005"
+    environment:
+      - NODE_ENV=development
+      - PORT=5005
+      - USE_MOCK_LLM=true
+    volumes:
+      - ./risk-service/src:/usr/src/app/src
+
 volumes:
   mongodb_data:
