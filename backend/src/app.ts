@@ -27,7 +27,11 @@ const apiLimiter = rateLimit({
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(mongoSanitize());
+app.use((req, res, next) => {
+  if (req.body) mongoSanitize.sanitize(req.body);
+  if (req.params) mongoSanitize.sanitize(req.params);
+  next();
+});
 app.use('/api/', apiLimiter);
 
 // Define Routes
