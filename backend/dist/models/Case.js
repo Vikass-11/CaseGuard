@@ -37,6 +37,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 const tenantIsolation_1 = require("../plugins/tenantIsolation");
 const CaseSchema = new mongoose_1.Schema({
     organizationId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Organization', required: true, index: true },
+    title: { type: String, required: true },
     status: { type: String, enum: ['INTAKE', 'ANALYSIS', 'REVIEW', 'CLOSED'], default: 'INTAKE' },
     createdBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' },
     createdAt: { type: Date, default: Date.now },

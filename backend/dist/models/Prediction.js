@@ -38,8 +38,10 @@ const PredictionSchema = new mongoose_1.Schema({
     caseId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Case', required: true },
     severity: { type: String, enum: ['Moderate', 'Severe', 'Life-Threatening'], required: true },
     escalationScore: { type: Number, required: true, min: 0, max: 100 },
-    escalationLevel: { type: String, enum: ['Low', 'Medium', 'High'], required: true },
+    escalationLevel: { type: String, enum: ['Low', 'Medium', 'High', 'Critical'], required: true },
     patterns: [{ type: String }],
     triggers: [{ type: String }],
+    requiresHumanReview: { type: Boolean, default: false },
+    patternEvidence: { type: mongoose_1.Schema.Types.Mixed },
 }, { timestamps: true });
 exports.default = mongoose_1.default.models.Prediction || mongoose_1.default.model('Prediction', PredictionSchema);
