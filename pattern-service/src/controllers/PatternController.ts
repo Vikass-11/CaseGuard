@@ -1,6 +1,12 @@
 import { Request, Response } from 'express';
 import { PATTERN_PROMPT } from '../prompts/patternPrompt';
 import { PatternSchema, PatternResult } from '../schemas/PatternSchema';
+import OpenAI from 'openai';
+import { zodResponseFormat } from 'openai/helpers/zod';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || ''
+});
 // In a real app, this would use LangChain and actual LLM keys (OpenAI/Anthropic)
 // For this scaffolding, we use a mock approach if USE_MOCK_LLM is true
 
@@ -20,11 +26,24 @@ export const analyzePatterns = async (req: Request, res: Response) => {
       // Mock result based on keywords
       patternResult = mockAnalyzePatterns(narrative);
     } else {
-      // Real LLM call would go here
-      // const prompt = PATTERN_PROMPT.replace('{{NARRATIVE}}', narrative).replace('{{TIMELINE}}', JSON.stringify(timelineEvents || []));
-      // const llmResponse = await llm.call(prompt);
-      // patternResult = PatternSchema.parse(JSON.parse(llmResponse));
-      throw new Error('Real LLM integration not fully implemented yet in pattern-service');
+      // Real LLM call
+      const prompt = PATTERN_PROMPT.replace('{{NARRATIVE}}', narrative).replace('{{TIMELINE}}', JSON.stringify(timelineEvents || []));
+      
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini', // or gpt-4o depending on needs, sticking to gpt-4o-mini for cost efficiency
+        messages: [
+          { role: 'system', content: 'You are an expert system designed to analyze domestic violence narratives and extract specific patterns of abuse based on definitions provided.' },
+          { role: 'user', content: prompt }
+        ],
+        response_format: zodResponseFormat(PatternSchema, 'pattern_result')
+      });
+      
+      const responseContent = completion.choices[0]?.message?.content;
+      if (!responseContent) {
+        throw new Error('No content returned from OpenAI');
+      }
+      
+      patternResult = PatternSchema.parse(JSON.parse(responseContent));
     }
 
     return res.json({

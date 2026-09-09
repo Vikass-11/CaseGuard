@@ -1,43 +1,71 @@
 import { Request, Response } from 'express';
 import { RiskSchema, RiskAssessment } from '../schemas/RiskSchema';
 import { getRiskAssessmentPrompt } from '../prompts/riskPrompt';
+import OpenAI from 'openai';
+import { zodResponseFormat } from 'openai/helpers/zod';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || ''
+});
 
 export const assessRisk = async (req: Request, res: Response): Promise<void> => {
   try {
     const { ruleFlags = [], patterns = [], researchPassages = [] } = req.body;
 
-    // Simulate LLM Call - in production this uses LangChain + LLM
-    // We will build a deterministic mock response based on inputs for structural testing
-    let severity: "Moderate" | "Severe" | "Life-Threatening" = "Moderate";
-    let escalation_score = 40;
-    let escalation_level: "Low" | "Medium" | "High" | "Critical" = "Medium";
-    
-    // Simple mock logic for testing
-    if (ruleFlags.length > 0) {
-      severity = "Severe"; // This ensures consistency check typically passes in the mock
-      escalation_score = 85;
-      escalation_level = "High";
+    const useMock = process.env.USE_MOCK_LLM === 'true';
+
+    let validatedData: RiskAssessment;
+
+    if (useMock) {
+      let severity: "Moderate" | "Severe" | "Life-Threatening" = "Moderate";
+      let escalation_score = 40;
+      let escalation_level: "Low" | "Medium" | "High" | "Critical" = "Medium";
       
-      // If we specifically want to test the consistency failure, we can look for a keyword
-      if (ruleFlags.includes('TEST_CONSISTENCY_FAILURE')) {
-        severity = "Moderate";
+      // Simple mock logic for testing
+      if (ruleFlags.length > 0) {
+        severity = "Severe"; 
+        escalation_score = 85;
+        escalation_level = "High";
+        
+        if (ruleFlags.includes('TEST_CONSISTENCY_FAILURE')) {
+          severity = "Moderate";
+        }
       }
+
+      const mockLLMResponse: any = {
+        severity,
+        escalation_score,
+        escalation_level,
+        trigger_list: ruleFlags.map((flag: string) => ({
+          trigger_description: "Hard rule triggered",
+          source_type: "rule_flag",
+          source_reference: flag
+        })),
+        requires_human_review: false
+      };
+
+      validatedData = RiskSchema.parse(mockLLMResponse);
+    } else {
+      const prompt = getRiskAssessmentPrompt(ruleFlags, patterns, researchPassages);
+      
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You are an expert AI risk assessment agent.' },
+          { role: 'user', content: prompt }
+        ],
+        response_format: zodResponseFormat(RiskSchema, 'risk_assessment')
+      });
+      
+      const responseContent = completion.choices[0]?.message?.content;
+      if (!responseContent) {
+        throw new Error('No content returned from OpenAI');
+      }
+      
+      validatedData = RiskSchema.parse(JSON.parse(responseContent));
     }
 
-    const mockLLMResponse: any = {
-      severity,
-      escalation_score,
-      escalation_level,
-      trigger_list: ruleFlags.map((flag: string) => ({
-        trigger_description: "Hard rule triggered",
-        source_type: "rule_flag",
-        source_reference: flag
-      })),
-      requires_human_review: false
-    };
-
-    // 1. Validate the structure
-    const validatedData = RiskSchema.parse(mockLLMResponse);
+    // 1. Consistency Check Layer (already parsed above)
 
     // 2. Consistency Check Layer
     const hasHardFlags = ruleFlags.length > 0 && !ruleFlags.includes('TEST_CONSISTENCY_FAILURE');

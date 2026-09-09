@@ -73,8 +73,10 @@ services:
       - PORT=5001
       - MONGO_URI=mongodb://mongodb:27017/caseguard?replicaSet=rs0
       - AWS_REGION=us-east-1
-      - USE_MOCK_COMPREHEND=true
+      - USE_MOCK_COMPREHEND=false
       - USE_MOCK_KMS=true
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -105,7 +107,8 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=5004
-      - USE_MOCK_LLM=true
+      - USE_MOCK_LLM=false
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     volumes:
       - ./pattern-service/src:/usr/src/app/src
 
@@ -119,7 +122,8 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=5005
-      - USE_MOCK_LLM=true
+      - USE_MOCK_LLM=false
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     volumes:
       - ./risk-service/src:/usr/src/app/src
 
