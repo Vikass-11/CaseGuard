@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
+import dns from 'dns';
 import User from '../models/User';
 import Organization from '../models/Organization';
 import Case from '../models/Case';
@@ -10,6 +11,7 @@ import Prediction from '../models/Prediction';
 import TimelineEvent from '../models/TimelineEvent';
 
 dotenv.config();
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const connectDB = async () => {
   try {
