@@ -159,6 +159,15 @@ export default function CaseDetailsPage() {
                       <h3 className="text-xs font-bold tracking-widest uppercase text-muted-foreground">Risk & Severity Assessment</h3>
                     </div>
                     <div className="p-8">
+                      {prediction.requiresHumanReview && (
+                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center">
+                          <AlertTriangle className="h-5 w-5 text-red-600 mr-3 shrink-0" />
+                          <div>
+                            <p className="text-sm font-bold text-red-800 tracking-tight uppercase">Human Review Required</p>
+                            <p className="text-xs text-red-600 font-medium mt-1">This case has complex risk factors that require manual assessment.</p>
+                          </div>
+                        </div>
+                      )}
                       <div className="flex items-center space-x-6">
                         <div className="flex flex-col items-center justify-center p-6 bg-muted rounded-2xl border border-border flex-1">
                           <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-3">Severity</p>
