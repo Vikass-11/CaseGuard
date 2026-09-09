@@ -2,13 +2,15 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.tenantIsolationPlugin = void 0;
 const tenantIsolationPlugin = (schema) => {
-    const requireOrgId = function (next) {
+    const requireOrgId = function () {
         const filter = this.getFilter();
-        if (!filter || !filter.organizationId) {
-            return next(new Error('organizationId is required in the query filter for tenant isolation.'));
+        // Bypass for unique validator which might not have organizationId
+        if (this._mongooseOptions && this._mongooseOptions.isUniqueValidator) {
+            return;
         }
-        // Proceed normally if organizationId is present
-        next();
+        if (!filter || !filter.organizationId) {
+            throw new Error('organizationId is required in the query filter for tenant isolation.');
+        }
     };
     // Typecasting the hook events because Mongoose types can be strict about hook names
     schema.pre('find', requireOrgId);

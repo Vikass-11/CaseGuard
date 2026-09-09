@@ -12,8 +12,13 @@ const AuditLog_1 = __importDefault(require("../models/AuditLog"));
 const createCase = async (req, res, next) => {
     try {
         const { title } = req.body;
-        const newCase = await Case_1.default.create({ userId: req.user._id, title });
-        await AuditLog_1.default.create({ userId: req.user._id, action: 'CREATE_CASE', entityType: 'Case', entityId: newCase._id });
+        // For demo purposes, we will assign a new ObjectId for organizationId if not provided
+        const newCase = await Case_1.default.create({
+            createdBy: req.user._id,
+            title,
+            organizationId: req.user.organizationId
+        });
+        await AuditLog_1.default.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'CREATE', collectionName: 'Case', documentId: newCase._id });
         res.status(201).json(newCase);
     }
     catch (error) {
@@ -24,7 +29,10 @@ exports.createCase = createCase;
 const getCases = async (req, res, next) => {
     try {
         // Basic filter: only show cases owned by user unless admin
-        const filter = req.user.role === 'admin' ? {} : { userId: req.user._id };
+        const filter = { organizationId: req.user.organizationId };
+        if (req.user.role !== 'admin' && req.user.role !== 'ADMIN') {
+            filter.createdBy = req.user._id;
+        }
         const cases = await Case_1.default.find(filter).sort({ createdAt: -1 });
         res.json(cases);
     }
@@ -36,14 +44,14 @@ exports.getCases = getCases;
 const getCaseById = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const caseDoc = await Case_1.default.findById(id);
+        const caseDoc = await Case_1.default.findOne({ _id: id, organizationId: req.user.organizationId });
         if (!caseDoc) {
             res.status(404);
             throw new Error('Case not found');
         }
         const inputs = await CaseInput_1.default.findOne({ caseId: id });
         const statement = await CaseStatement_1.default.findOne({ caseId: id });
-        const timeline = await TimelineEvent_1.default.find({ caseId: id }).sort({ date: 1 });
+        const timeline = await TimelineEvent_1.default.find({ caseId: id, organizationId: req.user.organizationId }).sort({ date: 1 });
         res.json({ case: caseDoc, inputs, statement, timeline });
     }
     catch (error) {
@@ -55,7 +63,7 @@ const updateCaseInput = async (req, res, next) => {
     try {
         const { id } = req.params;
         const input = await CaseInput_1.default.findOneAndUpdate({ caseId: id }, { ...req.body, caseId: id }, { new: true, upsert: true });
-        await AuditLog_1.default.create({ userId: req.user._id, action: 'UPDATE_CASE_INPUT', entityType: 'Case', entityId: id });
+        await AuditLog_1.default.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'UPDATE', collectionName: 'CaseInput', documentId: input._id });
         res.json(input);
     }
     catch (error) {
@@ -67,7 +75,7 @@ const updateCaseStatement = async (req, res, next) => {
     try {
         const { id } = req.params;
         const statement = await CaseStatement_1.default.findOneAndUpdate({ caseId: id }, { ...req.body, caseId: id }, { new: true, upsert: true });
-        await AuditLog_1.default.create({ userId: req.user._id, action: 'UPDATE_CASE_STATEMENT', entityType: 'Case', entityId: id });
+        await AuditLog_1.default.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'UPDATE', collectionName: 'CaseStatement', documentId: statement._id });
         res.json(statement);
     }
     catch (error) {
@@ -78,8 +86,8 @@ exports.updateCaseStatement = updateCaseStatement;
 const addTimelineEvent = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const event = await TimelineEvent_1.default.create({ ...req.body, caseId: id });
-        await AuditLog_1.default.create({ userId: req.user._id, action: 'ADD_TIMELINE_EVENT', entityType: 'Case', entityId: id });
+        const event = await TimelineEvent_1.default.create({ ...req.body, caseId: id, organizationId: req.user.organizationId });
+        await AuditLog_1.default.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'CREATE', collectionName: 'TimelineEvent', documentId: event._id });
         res.status(201).json(event);
     }
     catch (error) {

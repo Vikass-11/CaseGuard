@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.login = exports.register = void 0;
+exports.changePassword = exports.login = exports.register = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const Organization_1 = __importDefault(require("../models/Organization"));
@@ -20,9 +20,13 @@ const register = async (req, res) => {
             session.endSession();
             return res.status(400).json({ msg: 'User already exists' });
         }
-        // Since this handles "orgName", we create a new Organization
-        const newOrg = await Organization_1.default.create([{ name: orgName || 'Default Org' }], { session });
-        const organizationId = newOrg[0]._id;
+        // Find or create a shared 'Default Org' so all demo users can see the same cases
+        let org = await Organization_1.default.findOne({ name: 'Default Org' }).session(session);
+        if (!org) {
+            const newOrgs = await Organization_1.default.create([{ name: 'Default Org' }], { session });
+            org = newOrgs[0];
+        }
+        const organizationId = org._id;
         const salt = await bcryptjs_1.default.genSalt(10);
         const passwordHash = await bcryptjs_1.default.hash(password, salt);
         const newUsers = await User_1.default.create([{
@@ -30,13 +34,14 @@ const register = async (req, res) => {
                 email,
                 passwordHash,
                 organizationId,
-                role: 'ADMIN' // The creator of an org becomes the ADMIN
+                role: 'CASE_WORKER' // Default role for new users
             }], { session });
         user = newUsers[0];
         const payload = {
             id: user.id,
             role: user.role,
-            organizationId: user.organizationId
+            organizationId: user.organizationId,
+            requiresPasswordChange: user.requiresPasswordChange
         };
         const token = jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET || 'supersecretjwtkey12345', { expiresIn: '5d' });
         await session.commitTransaction();
@@ -65,7 +70,8 @@ const login = async (req, res) => {
         const payload = {
             id: user.id,
             role: user.role,
-            organizationId: user.organizationId
+            organizationId: user.organizationId,
+            requiresPasswordChange: user.requiresPasswordChange
         };
         const token = jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET || 'supersecretjwtkey12345', { expiresIn: '5d' });
         res.json({ token });
@@ -76,3 +82,33 @@ const login = async (req, res) => {
     }
 };
 exports.login = login;
+const changePassword = async (req, res) => {
+    try {
+        // Assuming authMiddleware has set req.user
+        const userId = req.user._id;
+        const { newPassword } = req.body;
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ msg: 'Password must be at least 6 characters' });
+        }
+        const salt = await bcryptjs_1.default.genSalt(10);
+        const passwordHash = await bcryptjs_1.default.hash(newPassword, salt);
+        const updatedUser = await User_1.default.findByIdAndUpdate(userId, { passwordHash, requiresPasswordChange: false }, { new: true });
+        if (!updatedUser) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+        // Generate new token reflecting requiresPasswordChange: false
+        const payload = {
+            id: updatedUser.id,
+            role: updatedUser.role,
+            organizationId: updatedUser.organizationId,
+            requiresPasswordChange: updatedUser.requiresPasswordChange
+        };
+        const token = jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET || 'supersecretjwtkey12345', { expiresIn: '5d' });
+        res.json({ msg: 'Password updated successfully', token });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).send('Server error');
+    }
+};
+exports.changePassword = changePassword;
