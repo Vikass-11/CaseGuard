@@ -4,10 +4,6 @@ import { getRiskAssessmentPrompt } from '../prompts/riskPrompt';
 import OpenAI from 'openai';
 import { zodResponseFormat } from 'openai/helpers/zod';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || ''
-});
-
 export const assessRisk = async (req: Request, res: Response): Promise<void> => {
   try {
     const { ruleFlags = [], patterns = [], researchPassages = [] } = req.body;
@@ -46,6 +42,14 @@ export const assessRisk = async (req: Request, res: Response): Promise<void> => 
 
       validatedData = RiskSchema.parse(mockLLMResponse);
     } else {
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        res.status(500).json({ error: 'OPENAI_API_KEY is required when USE_MOCK_LLM is false' });
+        return;
+      }
+
+      const openai = new OpenAI({ apiKey });
+
       const prompt = getRiskAssessmentPrompt(ruleFlags, patterns, researchPassages);
       
       const completion = await openai.chat.completions.create({

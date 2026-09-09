@@ -4,9 +4,6 @@ import { PatternSchema, PatternResult } from '../schemas/PatternSchema';
 import OpenAI from 'openai';
 import { zodResponseFormat } from 'openai/helpers/zod';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || ''
-});
 // In a real app, this would use LangChain and actual LLM keys (OpenAI/Anthropic)
 // For this scaffolding, we use a mock approach if USE_MOCK_LLM is true
 
@@ -26,6 +23,13 @@ export const analyzePatterns = async (req: Request, res: Response) => {
       // Mock result based on keywords
       patternResult = mockAnalyzePatterns(narrative);
     } else {
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: 'OPENAI_API_KEY is required when USE_MOCK_LLM is false' });
+      }
+
+      const openai = new OpenAI({ apiKey });
+
       // Real LLM call
       const prompt = PATTERN_PROMPT.replace('{{NARRATIVE}}', narrative).replace('{{TIMELINE}}', JSON.stringify(timelineEvents || []));
       
