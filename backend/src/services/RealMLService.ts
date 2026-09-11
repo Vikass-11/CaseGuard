@@ -83,6 +83,7 @@ export class RealMLService {
     let escalationLevel = 'Medium';
     let triggers: string[] = [];
     let requiresHumanReview = false;
+    let detailedAnalysis = '';
 
     try {
       const riskResponse = await fetch(`${RISK_SERVICE_URL}/api/assess-risk`, {
@@ -105,6 +106,7 @@ export class RealMLService {
       escalationScore = riskData.escalation_score || 50;
       escalationLevel = riskData.escalation_level || 'Medium';
       requiresHumanReview = !!riskData.requires_human_review;
+      detailedAnalysis = riskData.detailed_analysis || '';
 
       if (riskData.trigger_list && Array.isArray(riskData.trigger_list)) {
         triggers = riskData.trigger_list.map((t: any) => t.trigger_description);
@@ -125,7 +127,8 @@ export class RealMLService {
         patterns: detectedPatterns,
         triggers,
         requiresHumanReview,
-        patternEvidence
+        patternEvidence,
+        detailedAnalysis
       },
       { new: true, upsert: true }
     );

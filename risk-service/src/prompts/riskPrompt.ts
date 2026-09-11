@@ -19,6 +19,7 @@ Instructions:
 4. The "escalation_level" must be one of: "Low", "Medium", "High", "Critical".
 5. The "trigger_list" array must explicitly cite why the case received its severity. Every trigger MUST cite a "rule_flag", "research_passage", or "pattern_evidence" in its "source_type", and the "source_reference" must contain the exact string snippet or name of the rule.
 6. Important Consistency Check: If there are any "Rule Flags" present (such as strangulation, weapon threat, explicit threats to kill), the severity CANNOT be Moderate.
+7. The "detailed_analysis" field must contain a comprehensive, thorough markdown breakdown of the risk factors, psychological patterns, escalation dynamics, and clinical justification for the scoring.
 
 Output JSON ONLY. Do not output markdown code blocks or any other text.
   `;

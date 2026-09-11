@@ -9,6 +9,7 @@ export interface IPrediction extends Document {
   triggers: string[];
   requiresHumanReview?: boolean;
   patternEvidence?: any;
+  detailedAnalysis?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +24,7 @@ const PredictionSchema: Schema = new Schema(
     triggers: [{ type: String }],
     requiresHumanReview: { type: Boolean, default: false },
     patternEvidence: { type: Schema.Types.Mixed },
+    detailedAnalysis: { type: String },
   },
   { timestamps: true }
 );

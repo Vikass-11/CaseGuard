@@ -15,7 +15,8 @@ export const RiskSchema = z.object({
   escalation_score: z.number().min(0).max(100),
   escalation_level: EscalationLevelEnum,
   trigger_list: z.array(TriggerItemSchema),
-  requires_human_review: z.boolean().default(false)
+  requires_human_review: z.boolean().default(false),
+  detailed_analysis: z.string()
 });
 
 export type RiskAssessment = z.infer<typeof RiskSchema>;

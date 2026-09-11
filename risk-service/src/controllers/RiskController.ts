@@ -32,6 +32,7 @@ export const assessRisk = async (req: Request, res: Response): Promise<void> => 
         severity,
         escalation_score,
         escalation_level,
+        detailed_analysis: "This is a detailed mock analysis explaining the risk factors and escalation dynamics based on the provided inputs.",
         trigger_list: ruleFlags.map((flag: string) => ({
           trigger_description: "Hard rule triggered",
           source_type: "rule_flag",

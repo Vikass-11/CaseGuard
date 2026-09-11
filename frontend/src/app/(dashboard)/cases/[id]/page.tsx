@@ -185,6 +185,19 @@ export default function CaseDetailsPage() {
                       </div>
                     </div>
                   </div>
+
+                  {prediction.detailedAnalysis && (
+                    <div className="bg-card rounded-3xl border border-border overflow-hidden">
+                      <div className="p-8 border-b border-border">
+                        <h3 className="text-xs font-bold tracking-widest uppercase text-muted-foreground">Detailed Analysis</h3>
+                      </div>
+                      <div className="p-8">
+                        <p className="whitespace-pre-wrap text-foreground/90 leading-relaxed font-medium text-sm">
+                          {prediction.detailedAnalysis}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="bg-card rounded-3xl border border-border overflow-hidden">
                     <div className="p-8 border-b border-border">
