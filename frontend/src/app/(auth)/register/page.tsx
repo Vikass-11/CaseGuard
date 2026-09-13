@@ -45,21 +45,25 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4 py-12">
-      <Card className="w-full max-w-md shadow-lg border-border/70">
-        <form onSubmit={handleSubmit}>
-          <CardHeader className="space-y-3 text-center pb-6">
-            <div className="flex justify-center mb-2">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <ShieldCheck className="h-7 w-7 text-primary" />
-              </div>
-            </div>
-            <CardTitle className="text-2xl font-bold tracking-tight">Create an Account</CardTitle>
-            <CardDescription>
-              Register to securely access the CaseGuard platform.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 sm:p-8 py-12">
+      <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
+        <div className="flex flex-col items-center mb-8">
+          <div className="h-16 w-16 bg-primary/10 rounded-2xl border border-primary/20 flex items-center justify-center mb-6 shadow-sm">
+            <ShieldCheck className="h-8 w-8 text-primary" strokeWidth={1.5} />
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground text-center">CaseGuard</h1>
+          <p className="text-muted-foreground text-sm font-medium tracking-wide mt-2 text-center">Secure Legal Management System</p>
+        </div>
+
+        <Card className="w-full shadow-xl border-border/80 rounded-2xl bg-card">
+          <form onSubmit={handleSubmit}>
+            <CardHeader className="space-y-2 text-center pb-8 pt-8">
+              <CardTitle className="text-xl font-bold tracking-tight">Create an Account</CardTitle>
+              <CardDescription className="text-sm font-medium">
+                Register to securely access the CaseGuard platform
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5 px-8">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First name</Label>
@@ -122,25 +126,26 @@ export default function RegisterPage() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4 pt-6">
-            <Button type="submit" className="w-full text-md h-11" disabled={submitting}>
+          <CardFooter className="flex flex-col space-y-4 pt-6 pb-8 px-8 border-t border-border/80 bg-muted/10 mt-6">
+            <Button type="submit" className="w-full text-xs font-bold tracking-widest uppercase h-12 shadow-md hover:shadow-lg transition-all" disabled={submitting}>
               {submitting ? (
                 <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Creating account...
+                  <Loader2 className="h-4 w-4 animate-spin" /> CREATING ACCOUNT...
                 </span>
               ) : (
-                "Register & Continue"
+                "REGISTER & CONTINUE"
               )}
             </Button>
-            <div className="text-sm text-center text-muted-foreground">
+            <div className="text-sm text-center text-muted-foreground font-medium">
               Already have an account?{" "}
-              <Link href="/login" className="font-medium text-primary hover:underline">
+              <Link href="/login" className="font-bold text-primary hover:underline underline-offset-4">
                 Sign in
               </Link>
             </div>
           </CardFooter>
         </form>
       </Card>
+      </div>
     </div>
   );
 }
