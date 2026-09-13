@@ -44,25 +44,28 @@ export default function CaseDetailsPage() {
   if (isError || !data?.case) return <div className="p-20 text-center"><p className="text-xl text-foreground font-bold tracking-tight uppercase">Case not found or failed to load.</p></div>;
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-start">
+    <div className="space-y-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-end bg-card p-8 rounded-2xl border border-border/80 shadow-sm gap-6">
         <div>
-          <div className="flex items-center space-x-4 mb-2">
-            <h1 className="text-3xl font-bold text-foreground uppercase tracking-tighter">{data.case.title}</h1>
-            <span className={`inline-flex items-center px-3 py-1 text-[10px] font-bold uppercase tracking-widest border rounded-full ${
-                          data.case.status === 'open' ? 'border-primary text-foreground' : 'border-border text-muted-foreground'
-                        }`}>
+          <div className="flex items-center space-x-4 mb-3">
+            <h1 className="text-4xl font-extrabold text-foreground tracking-tight">{data.case.title}</h1>
+            <span className={`inline-flex items-center px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest border rounded-md shadow-sm ${
+              data.case.status === 'open' ? 'border-primary/20 bg-primary/5 text-primary' : 'border-border bg-muted/20 text-muted-foreground'
+            }`}>
               {data.case.status}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground font-mono tracking-wider">ID: {data.case._id}</p>
+          <p className="text-sm text-muted-foreground font-medium tracking-wide flex items-center">
+            <span className="text-[10px] font-bold uppercase tracking-widest mr-2">Ref ID:</span> 
+            <span className="font-mono bg-muted/50 px-2 py-1 rounded">{data.case._id}</span>
+          </p>
         </div>
-        <div className="flex space-x-3">
-          <button onClick={() => router.push(`/cases/${id}/brief`)} className="flex items-center justify-center px-6 py-3 text-xs font-bold tracking-widest uppercase text-foreground bg-transparent hover:bg-muted border border-border hover:border-primary/40 rounded-lg transition-all duration-300">
-            <FileText className="mr-2 h-4 w-4" /> Lawyer Brief
+        <div className="flex space-x-4">
+          <button onClick={() => router.push(`/cases/${id}/brief`)} className="flex items-center justify-center px-6 py-3 text-xs font-bold tracking-widest uppercase text-foreground bg-card hover:bg-muted border border-border/80 hover:border-primary/40 rounded-xl transition-all duration-300 shadow-sm">
+            <FileText className="mr-2 h-4 w-4" /> Generate Brief
           </button>
-          <button onClick={() => analyzeMutation.mutate()} disabled={analyzeMutation.isPending} className="flex items-center justify-center bg-primary px-6 py-3 text-primary-foreground font-bold tracking-widest uppercase text-xs transition-all hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed border border-primary rounded-lg">
-            <Activity className="mr-2 h-4 w-4" /> {analyzeMutation.isPending ? 'Analyzing...' : 'Run Analysis'}
+          <button onClick={() => analyzeMutation.mutate()} disabled={analyzeMutation.isPending} className="flex items-center justify-center bg-primary px-6 py-3 text-primary-foreground font-bold tracking-widest uppercase text-xs transition-all hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed border border-primary rounded-xl shadow-md">
+            <Activity className="mr-2 h-4 w-4" /> {analyzeMutation.isPending ? 'Processing...' : 'Run Analysis'}
           </button>
         </div>
       </div>
@@ -70,31 +73,31 @@ export default function CaseDetailsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="bg-muted border border-border p-1 rounded-lg">
-              <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Overview</TabsTrigger>
-              <TabsTrigger value="statement" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Statement</TabsTrigger>
-              <TabsTrigger value="timeline" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Timeline</TabsTrigger>
-              <TabsTrigger value="analysis" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Analysis</TabsTrigger>
+            <TabsList className="bg-transparent border-b border-border/60 w-full justify-start h-auto p-0 space-x-8 rounded-none mb-6">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground">Overview</TabsTrigger>
+              <TabsTrigger value="statement" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground">Statement</TabsTrigger>
+              <TabsTrigger value="timeline" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground">Timeline</TabsTrigger>
+              <TabsTrigger value="analysis" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground">Analysis</TabsTrigger>
             </TabsList>
             
             <TabsContent value="overview" className="mt-6">
-              <div className="bg-card rounded-3xl border border-border overflow-hidden">
-                <div className="p-8 border-b border-border">
-                  <h3 className="text-xs font-bold tracking-widest uppercase text-muted-foreground">Intake Details</h3>
+              <div className="bg-card rounded-2xl border border-border/80 overflow-hidden shadow-sm">
+                <div className="p-8 border-b border-border/80 bg-muted/20">
+                  <h3 className="text-xs font-bold tracking-widest uppercase text-foreground">Intake Details</h3>
                 </div>
                 <div className="p-8">
                   <div className="grid grid-cols-2 gap-8">
                     <div>
                       <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">Relationship Type</p>
-                      <p className="mt-2 text-foreground font-medium text-lg">{data.inputs?.relationshipType || 'N/A'}</p>
+                      <p className="mt-2 text-foreground font-semibold text-lg">{data.inputs?.relationshipType || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">Frequency</p>
-                      <p className="mt-2 text-foreground font-medium text-lg">{data.inputs?.incidentFrequency || 'N/A'}</p>
+                      <p className="mt-2 text-foreground font-semibold text-lg">{data.inputs?.incidentFrequency || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">Prior Complaints</p>
-                      <p className="mt-2 text-foreground font-medium text-lg">{data.inputs?.priorComplaints ? 'Yes' : 'No'}</p>
+                      <p className="mt-2 text-foreground font-semibold text-lg">{data.inputs?.priorComplaints ? 'Yes' : 'No'}</p>
                     </div>
                   </div>
                 </div>
@@ -102,12 +105,12 @@ export default function CaseDetailsPage() {
             </TabsContent>
             
             <TabsContent value="statement" className="mt-6">
-              <div className="bg-card rounded-3xl border border-border overflow-hidden">
-                <div className="p-8 border-b border-border">
-                  <h3 className="text-xs font-bold tracking-widest uppercase text-muted-foreground">Victim Statement</h3>
+              <div className="bg-card rounded-2xl border border-border/80 overflow-hidden shadow-sm">
+                <div className="p-8 border-b border-border/80 bg-muted/20">
+                  <h3 className="text-xs font-bold tracking-widest uppercase text-foreground">Victim Statement</h3>
                 </div>
                 <div className="p-8">
-                  <p className="whitespace-pre-wrap text-foreground/90 leading-relaxed font-medium">
+                  <p className="whitespace-pre-wrap text-foreground leading-relaxed font-medium">
                     {data.statement?.anonymizedText || 'No statement provided.'}
                   </p>
                 </div>
@@ -233,34 +236,34 @@ export default function CaseDetailsPage() {
 
         {/* Right Sidebar - Safe Action Navigator */}
         <div className="space-y-6">
-          <div className="bg-card rounded-3xl border border-border overflow-hidden sticky top-6">
-            <div className="p-6 border-b border-border bg-muted/60">
+          <div className="bg-card rounded-2xl border border-border/80 overflow-hidden sticky top-24 shadow-sm">
+            <div className="p-6 border-b border-border/80 bg-muted/20">
               <h3 className="flex items-center text-xs font-bold tracking-widest uppercase text-foreground">
-                <ShieldCheck className="h-4 w-4 mr-2" />
-                Safe Action Navigator
+                <ShieldCheck className="h-4 w-4 mr-2 text-primary" />
+                Action Navigator
               </h3>
             </div>
             
             <div className="p-0">
               {!recommendation ? (
-                <div className="p-8 text-center text-muted-foreground text-sm font-medium">
+                <div className="p-10 text-center text-muted-foreground text-sm font-medium">
                   Run analysis to generate action items.
                 </div>
               ) : (
-                <div className="divide-y divide-border">
-                  <div className="p-6 bg-[oklch(0.97_0.03_80)]">
-                    <p className="text-[10px] font-bold text-[oklch(0.55_0.14_65)] uppercase tracking-widest mb-2">Urgency</p>
-                    <p className="text-[oklch(0.55_0.14_65)] font-bold flex items-center text-sm tracking-wide">
+                <div className="divide-y divide-border/80">
+                  <div className="p-6 bg-destructive/5">
+                    <p className="text-[10px] font-bold text-destructive uppercase tracking-widest mb-2">Urgency</p>
+                    <p className="text-destructive font-bold flex items-center text-sm tracking-wide">
                       <AlertTriangle className="h-4 w-4 mr-2" /> {recommendation.urgency}
                     </p>
                   </div>
                   
                   <div className="p-6">
                     <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-4">Evidence Checklist</p>
-                    <ul className="space-y-3">
+                    <ul className="space-y-4">
                       {recommendation.evidenceChecklist.map((item: string, i: number) => (
                         <li key={i} className="flex items-start text-sm text-foreground font-medium leading-relaxed">
-                          <ChevronRight className="h-4 w-4 text-muted-foreground mr-2 shrink-0 mt-0.5" />
+                          <ChevronRight className="h-4 w-4 text-primary mr-2 shrink-0 mt-0.5" />
                           {item}
                         </li>
                       ))}
@@ -269,21 +272,21 @@ export default function CaseDetailsPage() {
 
                   <div className="p-6">
                     <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-4">Follow-up Questions</p>
-                    <ul className="space-y-3">
+                    <ul className="space-y-4">
                       {recommendation.followUpQuestions.map((item: string, i: number) => (
                         <li key={i} className="flex items-start text-sm text-foreground font-medium leading-relaxed">
-                          <ChevronRight className="h-4 w-4 text-muted-foreground mr-2 shrink-0 mt-0.5" />
+                          <ChevronRight className="h-4 w-4 text-primary mr-2 shrink-0 mt-0.5" />
                           {item}
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  <div className="p-6 bg-muted/60">
+                  <div className="p-6 bg-muted/20">
                     <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-4">Referrals</p>
                     <div className="flex flex-wrap gap-2">
                       {recommendation.referrals.map((item: string, i: number) => (
-                        <span key={i} className="inline-flex items-center px-3 py-1 text-[10px] font-bold uppercase tracking-widest bg-muted text-foreground border border-border rounded-full">{item}</span>
+                        <span key={i} className="inline-flex items-center px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest bg-background text-foreground border border-border/80 rounded-full shadow-sm">{item}</span>
                       ))}
                     </div>
                   </div>
