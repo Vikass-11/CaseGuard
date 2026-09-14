@@ -39,6 +39,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/cases', caseRoutes);
 
+import audioRoutes from './routes/audio.routes';
+app.use('/api/audio', audioRoutes);
+
+import path from 'path';
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 app.get('/', (req, res) => res.send('API Running'));
 
 // Global error handler
