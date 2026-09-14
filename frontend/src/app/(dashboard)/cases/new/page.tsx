@@ -5,6 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { ArrowUpRight, ShieldAlert } from 'lucide-react';
+import { AudioRecorder } from '@/components/ui/audio-recorder';
 
 export default function NewCasePage() {
   const router = useRouter();
@@ -115,7 +116,10 @@ export default function NewCasePage() {
             </div>
 
             <div className="space-y-3 pt-6 border-t border-border/80">
-              <label htmlFor="statement" className="text-[10px] font-bold tracking-widest uppercase text-foreground">Victim Statement</label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="statement" className="text-[10px] font-bold tracking-widest uppercase text-foreground">Victim Statement</label>
+                <AudioRecorder onTranscriptionComplete={(text) => setFormData(prev => ({ ...prev, statement: prev.statement ? prev.statement + '\n\n' + text : text }))} />
+              </div>
               <textarea 
                 id="statement" 
                 className="block w-full bg-background border border-border/80 px-5 py-4 text-foreground placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-300 font-medium tracking-wide text-sm min-h-[240px] resize-y rounded-xl shadow-sm leading-relaxed"
