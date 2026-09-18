@@ -10,7 +10,8 @@ import {
 import {
   analyzeCase,
   generateBrief,
-  generateRecommendations
+  generateRecommendations,
+  saveBrief
 } from '../controllers/MockMLController';
 import { protect } from '../middleware/authMiddleware';
 
@@ -32,6 +33,7 @@ router.post('/:id/timeline', addTimelineEvent);
 // Mock ML Routes
 router.post('/:id/analyze', analyzeCase);
 router.post('/:id/generate-brief', generateBrief);
+router.put('/:id/brief', saveBrief);
 router.post('/:id/generate-recommendations', generateRecommendations);
 
 export default router;
