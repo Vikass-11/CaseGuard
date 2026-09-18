@@ -10,6 +10,7 @@ import {
   FileText,
   UserPlus,
   LogOut,
+  Brain,
 } from "lucide-react";
 import { getCurrentUser, getStoredEmail, isAuthenticated, logout, UserRole } from "@/lib/auth";
 
@@ -17,6 +18,7 @@ const NAV_ITEMS: { name: string; href: string; icon: any; roles: UserRole[] }[] 
   { name: "Cases", href: "/dashboard", icon: FileText, roles: ["LAWYER", "CASE_WORKER", "ADMIN"] },
   { name: "New Intake", href: "/cases/new", icon: UserPlus, roles: ["LAWYER", "CASE_WORKER", "ADMIN"] },
   { name: "Admin Dashboard", href: "/admin", icon: LayoutDashboard, roles: ["ADMIN"] },
+  { name: "Practice Analyser", href: "/practice", icon: Brain, roles: ["LAWYER", "ADMIN"] },
   // "PII Review Queue" and "System Config" from the original nav aren't built yet
   // (no page exists at those routes) — left out rather than linking to a 404.
 ];
