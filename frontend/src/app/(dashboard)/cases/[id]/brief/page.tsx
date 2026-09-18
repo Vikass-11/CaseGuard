@@ -36,15 +36,21 @@ export default function LawyerBriefPage() {
     }
   }, [id, content, generateMutation.isPending, generateMutation.isSuccess, generateMutation.isError]);
 
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.put(`/cases/${id}/brief`, { content });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Brief saved successfully!');
+    },
+    onError: () => {
+      toast.error('Failed to save brief.');
+    }
+  });
+
   const handleSave = () => {
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 1000)),
-      {
-        loading: 'Saving brief...',
-        success: 'Brief saved successfully!',
-        error: 'Failed to save brief.',
-      }
-    );
+    saveMutation.mutate();
   };
 
   const handlePrint = () => {
@@ -68,8 +74,8 @@ export default function LawyerBriefPage() {
           <Button variant="outline" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" /> Export / Print
           </Button>
-          <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
-            <Save className="mr-2 h-4 w-4" /> Save Changes
+          <Button onClick={handleSave} disabled={saveMutation.isPending} className="bg-green-600 hover:bg-green-700">
+            <Save className="mr-2 h-4 w-4" /> {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </div>
