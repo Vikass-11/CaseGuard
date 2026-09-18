@@ -3,7 +3,13 @@ import Prediction, { IPrediction } from '../models/Prediction';
 import CaseInput from '../models/CaseInput';
 import CaseStatement from '../models/CaseStatement';
 import TimelineEvent from '../models/TimelineEvent';
+import Recommendation, { IRecommendation } from '../models/Recommendation';
+import OpenAI from 'openai';
 
+const openai = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: 'https://api.groq.com/openai/v1',
+});
 export class RealMLService {
   static async generatePrediction(caseId: string, organizationId: string): Promise<IPrediction> {
     const PATTERN_SERVICE_URL = process.env.PATTERN_SERVICE_URL || 'http://localhost:5004';
@@ -134,5 +140,77 @@ export class RealMLService {
     );
 
     return prediction;
+  }
+
+  static async generateRecommendations(caseId: string, severity: string): Promise<IRecommendation> {
+    const statement = await CaseStatement.findOne({ caseId });
+    const narrative = statement?.anonymizedText || '';
+
+    if (!narrative) {
+      return await Recommendation.findOneAndUpdate(
+        { caseId },
+        { 
+          urgency: severity === 'Life-Threatening' ? 'Immediate Action Required' : 'Standard Follow-up',
+          evidenceChecklist: ['Photos of injuries', 'Medical reports', 'Police reports'],
+          followUpQuestions: ['Are there children in the home?', 'Do you have a safe place to stay?'],
+          referrals: ['Local Women Shelter', 'Legal Aid Society']
+        },
+        { new: true, upsert: true }
+      );
+    }
+
+    const prompt = `
+You are an expert legal AI assistant analyzing a case narrative for a domestic abuse or legal issue.
+Based on the following narrative, generate detailed recommendations for the lawyer handling this case.
+
+Narrative:
+"""
+${narrative}
+"""
+
+Severity of case is: ${severity}.
+
+Provide your analysis strictly in JSON format containing the following fields:
+{
+  "urgency": "A short string indicating urgency (e.g. 'Immediate Action Required', 'Standard Follow-up')",
+  "evidenceChecklist": ["Array of strings", "List 3-5 specific pieces of evidence to gather based on the narrative"],
+  "followUpQuestions": ["Array of strings", "List 3-5 specific questions the lawyer must ask to fill missing information"],
+  "referrals": ["Array of strings", "List 2-4 recommended referrals (e.g. specific types of shelters, counseling, legal aid)"]
+}
+`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'openai/gpt-oss-20b',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' }
+      });
+
+      const content = response.choices[0]?.message?.content || '{}';
+      const data = JSON.parse(content);
+
+      return await Recommendation.findOneAndUpdate(
+        { caseId },
+        {
+          urgency: data.urgency || 'Standard Follow-up',
+          evidenceChecklist: data.evidenceChecklist || [],
+          followUpQuestions: data.followUpQuestions || [],
+          referrals: data.referrals || []
+        },
+        { new: true, upsert: true }
+      );
+    } catch (error) {
+      console.error('Error generating AI recommendations:', error);
+      return await Recommendation.findOneAndUpdate(
+        { caseId },
+        { 
+          urgency: 'Standard Follow-up',
+          evidenceChecklist: ['Photos of injuries', 'Medical reports', 'Police reports'],
+          followUpQuestions: ['Are there children in the home?', 'Do you have a safe place to stay?'],
+          referrals: ['Local Women Shelter', 'Legal Aid Society']
+        },
+        { new: true, upsert: true }
+      );
+    }
   }
 }
