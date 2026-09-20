@@ -8,6 +8,7 @@ import { ShieldAlert } from 'lucide-react';
 export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // New user form state
@@ -23,12 +24,16 @@ export default function AdminPage() {
 
   const fetchData = async () => {
     try {
-      const [usersRes, logsRes] = await Promise.all([
+      const [usersRes, logsRes, metricsRes] = await Promise.all([
         api.get('/admin/users'),
-        api.get('/admin/audit-logs')
+        api.get('/admin/audit-logs'),
+        api.get('/admin/evals/metrics').catch(() => ({ data: { metrics: [] } }))
       ]);
       setUsers(usersRes.data);
       setLogs(logsRes.data);
+      if (metricsRes?.data?.metrics) {
+        setMetrics(metricsRes.data.metrics);
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -99,6 +104,7 @@ export default function AdminPage() {
         <TabsList className="bg-transparent border-b border-border/60 w-full justify-start h-auto p-0 space-x-8 rounded-none mb-6">
           <TabsTrigger value="users" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground transition-all">Users</TabsTrigger>
           <TabsTrigger value="logs" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground transition-all">Audit Logs</TabsTrigger>
+          <TabsTrigger value="evals" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground transition-all">AI Evaluation</TabsTrigger>
         </TabsList>
         
         <TabsContent value="users" className="mt-6 space-y-8">
@@ -216,6 +222,27 @@ export default function AdminPage() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="evals" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {metrics.map((metric, idx) => (
+              <div key={idx} className="bg-card rounded-2xl border border-border/80 p-8 shadow-sm">
+                <h3 className="text-sm font-bold tracking-widest text-muted-foreground uppercase mb-2">{metric.label}</h3>
+                <div className="text-4xl font-extrabold text-foreground mb-4">{metric.value}</div>
+                <p className="text-xs font-medium text-muted-foreground">{metric.description}</p>
+                {/* Visual indicator for rate */}
+                {metric.value.includes('%') && (
+                  <div className="w-full bg-muted/30 h-2 mt-4 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full ${parseFloat(metric.value) > 20 ? 'bg-destructive' : 'bg-primary'}`} 
+                      style={{ width: metric.value }}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </TabsContent>
       </Tabs>
