@@ -82,3 +82,92 @@ export const saveBrief = async (req: Request, res: Response, next: NextFunction)
         next(error);
     }
 };
+export const overridePrediction = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const id = req.params.id as string;
+        const { field, newValue, reason } = req.body;
+        const actorId = (req as any).user._id;
+        
+        const PredictionModel = (await import('../models/Prediction')).default;
+        const prediction = await PredictionModel.findOne({ caseId: id });
+        
+        if (!prediction) {
+            return res.status(404).json({ message: 'Prediction not found' });
+        }
+        
+        const originalValue = prediction[field];
+        
+        const overrideLog = {
+            field,
+            originalValue,
+            newValue,
+            reason,
+            actorId,
+            timestamp: new Date()
+        };
+        
+        prediction[field] = newValue;
+        if (!prediction.overrides) prediction.overrides = [];
+        prediction.overrides.push(overrideLog);
+        
+        await prediction.save();
+        
+        await AuditLog.create({ 
+            organizationId: (req as any).user.organizationId, 
+            actorId, 
+            action: 'UPDATE', 
+            collectionName: 'Prediction', 
+            documentId: prediction._id,
+            diff: { [field]: { before: originalValue, after: newValue } }
+        });
+        
+        res.json(prediction);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const overrideRecommendation = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const id = req.params.id as string;
+        const { field, newValue, reason } = req.body;
+        const actorId = (req as any).user._id;
+        
+        const RecommendationModel = (await import('../models/Recommendation')).default;
+        const recommendation = await RecommendationModel.findOne({ caseId: id });
+        
+        if (!recommendation) {
+            return res.status(404).json({ message: 'Recommendation not found' });
+        }
+        
+        const originalValue = recommendation[field];
+        
+        const overrideLog = {
+            field,
+            originalValue,
+            newValue,
+            reason,
+            actorId,
+            timestamp: new Date()
+        };
+        
+        recommendation[field] = newValue;
+        if (!recommendation.overrides) recommendation.overrides = [];
+        recommendation.overrides.push(overrideLog);
+        
+        await recommendation.save();
+        
+        await AuditLog.create({ 
+            organizationId: (req as any).user.organizationId, 
+            actorId, 
+            action: 'UPDATE', 
+            collectionName: 'Recommendation', 
+            documentId: recommendation._id,
+            diff: { [field]: { before: originalValue, after: newValue } }
+        });
+        
+        res.json(recommendation);
+    } catch (error) {
+        next(error);
+    }
+};
