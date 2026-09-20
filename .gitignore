@@ -33,3 +33,4 @@ backend/test-analyze.js
 backend/test-service.ts
 backend/test-openai.ts
 backend/uploads/
+backend/tests/
