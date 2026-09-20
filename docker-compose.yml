@@ -1,134 +1,110 @@
 version: '3.8'
 
 services:
-  mongodb:
-    image: mongo:6
-    container_name: caseguard-mongodb
-    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+  mongo:
+    image: mongo:6.0
     ports:
       - "27017:27017"
     volumes:
-      - mongodb_data:/data/db
-    healthcheck:
-      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}) }" | mongosh --port 27017 --quiet
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: caseguard-backend
-    ports:
-      - "5000:5000"
-    environment:
-      - NODE_ENV=development
-      - PORT=5000
-      - MONGO_URI=mongodb://mongodb:27017/caseguard?replicaSet=rs0
-      - JWT_SECRET=supersecretjwtkey12345
-      - USE_MOCK_ML=false
-      - PATTERN_SERVICE_URL=http://pattern-service:5004
-      - RISK_SERVICE_URL=http://risk-service:5005
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    volumes:
-      - ./backend/src:/usr/src/app/src
-
-  screener-service:
-    build:
-      context: ./screener-service
-      dockerfile: Dockerfile
-    container_name: caseguard-screener-service
-    environment:
-      - NODE_ENV=development
-    ports:
-      - "5003:5003"
-    volumes:
-      - ./screener-service/src:/usr/src/app/src
-
-  knowledge-service:
-    build:
-      context: ./knowledge-service
-      dockerfile: Dockerfile
-    container_name: caseguard-knowledge-service
-    environment:
-      - NODE_ENV=development
-      - MONGO_URI=mongodb://mongodb:27017/caseguard?replicaSet=rs0
-      - AWS_REGION=us-east-1
-      - USE_MOCK_BEDROCK=true
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    volumes:
-      - ./knowledge-service/src:/usr/src/app/src
+      - mongo_data:/data/db
+    networks:
+      - caseguard_net
 
   pii-service:
     build:
       context: ./pii-service
       dockerfile: Dockerfile
-    container_name: caseguard-pii-service
     ports:
       - "5001:5001"
+    networks:
+      - caseguard_net
+
+  knowledge-service:
+    build:
+      context: ./knowledge-service
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5002"
     environment:
-      - NODE_ENV=development
-      - PORT=5001
-      - MONGO_URI=mongodb://mongodb:27017/caseguard?replicaSet=rs0
-      - AWS_REGION=us-east-1
-      - USE_MOCK_COMPREHEND=false
-      - USE_MOCK_KMS=true
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - MONGO_URI=mongodb://mongo:27017/caseguard
+      - PORT=5002
     depends_on:
-      mongodb:
-        condition: service_healthy
-    volumes:
-      - ./pii-service/src:/usr/src/app/src
+      - mongo
+    networks:
+      - caseguard_net
+
+  screener-service:
+    build:
+      context: ./screener-service
+      dockerfile: Dockerfile
+    ports:
+      - "5003:5003"
+    networks:
+      - caseguard_net
+
+  pattern-service:
+    build:
+      context: ./pattern-service
+      dockerfile: Dockerfile
+    ports:
+      - "5004:5004"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    networks:
+      - caseguard_net
+
+  risk-service:
+    build:
+      context: ./risk-service
+      dockerfile: Dockerfile
+    ports:
+      - "5005:5005"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    networks:
+      - caseguard_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/caseguard
+      - JWT_SECRET=test-secret
+      - PORT=5000
+      - PII_SERVICE_URL=http://pii-service:5001
+      - KNOWLEDGE_SERVICE_URL=http://knowledge-service:5002
+      - SCREENER_SERVICE_URL=http://screener-service:5003
+      - PATTERN_SERVICE_URL=http://pattern-service:5004
+      - RISK_SERVICE_URL=http://risk-service:5005
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    depends_on:
+      - mongo
+      - pii-service
+      - knowledge-service
+      - screener-service
+      - pattern-service
+      - risk-service
+    networks:
+      - caseguard_net
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: caseguard-frontend
     ports:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:5000/api
     depends_on:
       - backend
-    volumes:
-      - ./frontend/src:/app/src
+    networks:
+      - caseguard_net
 
-  pattern-service:
-    build:
-      context: ./pattern-service
-      dockerfile: Dockerfile
-    container_name: caseguard-pattern-service
-    ports:
-      - "5004:5004"
-    environment:
-      - NODE_ENV=development
-      - PORT=5004
-      - USE_MOCK_LLM=false
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    volumes:
-      - ./pattern-service/src:/usr/src/app/src
-
-  risk-service:
-    build:
-      context: ./risk-service
-      dockerfile: Dockerfile
-    container_name: caseguard-risk-service
-    ports:
-      - "5005:5005"
-    environment:
-      - NODE_ENV=development
-      - PORT=5005
-      - USE_MOCK_LLM=false
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    volumes:
-      - ./risk-service/src:/usr/src/app/src
+networks:
+  caseguard_net:
 
 volumes:
-  mongodb_data:
+  mongo_data:
