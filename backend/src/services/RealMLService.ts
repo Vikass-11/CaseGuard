@@ -15,6 +15,8 @@ export class RealMLService {
   static async generatePrediction(caseId: string, organizationId: string): Promise<IPrediction> {
     const PATTERN_SERVICE_URL = process.env.PATTERN_SERVICE_URL || 'http://localhost:5004';
     const RISK_SERVICE_URL = process.env.RISK_SERVICE_URL || 'http://localhost:5005';
+    const SCREENER_SERVICE_URL = process.env.SCREENER_SERVICE_URL || 'http://localhost:5003';
+    const KNOWLEDGE_SERVICE_URL = process.env.KNOWLEDGE_SERVICE_URL || 'http://localhost:5002';
 
     // 1. Load data
     const statement = await CaseStatement.findOne({ caseId });
@@ -65,24 +67,48 @@ export class RealMLService {
       }
     }
 
-    // 3. Generate ruleFlags
-    const ruleFlags: string[] = [];
+    // 3. Call screener-service to generate ruleFlags
+    let ruleFlags: string[] = [];
+    let screenerRequiresHumanReview = false;
 
-    if (inputs?.priorComplaints) {
-      ruleFlags.push('PRIOR_COMPLAINTS');
-    }
+    try {
+      const screenerResponse = await fetch(`${SCREENER_SERVICE_URL}/screen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ narrative: anonymizedText })
+      });
 
-    if (inputs?.incidentFrequency) {
-      const freq = inputs.incidentFrequency.toLowerCase();
-      if (freq.includes('daily') || freq.includes('weekly') || freq.includes('escalating')) {
-        ruleFlags.push('FREQUENT_OR_ESCALATING_INCIDENTS');
+      if (screenerResponse.ok) {
+        const screenerData = await screenerResponse.json();
+        ruleFlags = screenerData.triggered_rules || [];
+        screenerRequiresHumanReview = !!screenerData.human_review_required;
+      } else {
+        console.error(`Screener service failed with status ${screenerResponse.status}`);
       }
+    } catch (error) {
+      console.error('Error calling screener-service:', error);
     }
 
-    if (patternResult['threats']?.flagged) ruleFlags.push('THREATS_PRESENT');
-    if (patternResult['physical']?.flagged) ruleFlags.push('PHYSICAL_ABUSE_PRESENT');
-    if (patternResult['stalking']?.flagged) ruleFlags.push('STALKING_PRESENT');
-    if (patternResult['financial']?.flagged) ruleFlags.push('FINANCIAL_ABUSE_PRESENT');
+    // Add UI fallback rules just in case
+    if (inputs?.priorComplaints && !ruleFlags.includes('PRIOR_COMPLAINTS')) ruleFlags.push('PRIOR_COMPLAINTS');
+    if (patternResult['threats']?.flagged && !ruleFlags.includes('THREATS_PRESENT')) ruleFlags.push('THREATS_PRESENT');
+
+    // 3.5 Retrieve Research Passages
+    let researchPassages: string[] = [];
+    try {
+      const researchQuery = detectedPatterns.length > 0 ? detectedPatterns.join(' ') : 'domestic violence risk factors';
+      const researchResponse = await fetch(`${KNOWLEDGE_SERVICE_URL}/api/retrieve-research`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: researchQuery, k: 3 })
+      });
+      if (researchResponse.ok) {
+        const researchData = await researchResponse.json();
+        researchPassages = researchData.map((r: any) => r.chunkText);
+      }
+    } catch (err) {
+      console.error('Error fetching research:', err);
+    }
 
     // 4. Call risk-service
     let severity = 'Moderate';
@@ -99,7 +125,7 @@ export class RealMLService {
         body: JSON.stringify({
           ruleFlags,
           patterns: Object.keys(patternEvidence).map(k => ({ pattern: k, evidence: patternEvidence[k] })),
-          researchPassages: []
+          researchPassages
         })
       });
 
@@ -112,7 +138,7 @@ export class RealMLService {
       severity = riskData.severity || 'Moderate';
       escalationScore = riskData.escalation_score || 50;
       escalationLevel = riskData.escalation_level || 'Medium';
-      requiresHumanReview = !!riskData.requires_human_review;
+      requiresHumanReview = !!riskData.requires_human_review || screenerRequiresHumanReview;
       detailedAnalysis = riskData.detailed_analysis || '';
 
       if (riskData.trigger_list && Array.isArray(riskData.trigger_list)) {
@@ -144,6 +170,7 @@ export class RealMLService {
   }
 
   static async generateRecommendations(caseId: string, severity: string): Promise<IRecommendation> {
+    const KNOWLEDGE_SERVICE_URL = process.env.KNOWLEDGE_SERVICE_URL || 'http://localhost:5002';
     const statement = await CaseStatement.findOne({ caseId });
     const narrative = statement?.anonymizedText || '';
 
@@ -160,6 +187,22 @@ export class RealMLService {
       );
     }
 
+    // Retrieve legal/referral context
+    let legalContext = '';
+    try {
+      const legalResponse = await fetch(`${KNOWLEDGE_SERVICE_URL}/api/retrieve-legal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: narrative, k: 3, jurisdiction: 'default' })
+      });
+      if (legalResponse.ok) {
+        const legalData = await legalResponse.json();
+        legalContext = legalData.map((l: any) => l.chunkText).join('\n\n');
+      }
+    } catch (err) {
+      console.error('Error fetching legal context:', err);
+    }
+
     const prompt = `
 You are an expert legal AI assistant analyzing a case narrative for a domestic abuse or legal issue.
 Based on the following narrative, generate detailed recommendations for the lawyer handling this case.
@@ -170,6 +213,11 @@ ${narrative}
 """
 
 Severity of case is: ${severity}.
+
+Here is some retrieved legal and referral context to ground your recommendations:
+"""
+${legalContext || 'No specific context retrieved.'}
+"""
 
 Provide your analysis strictly in JSON format containing the following fields:
 {
