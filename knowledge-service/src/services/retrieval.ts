@@ -177,3 +177,48 @@ export async function getStaleLegalDocuments() {
     lastVerifiedAt: { $lt: ninetyDaysAgo }
   }).select('sourceDocId jurisdiction documentType lastVerifiedAt');
 }
+
+import CaseChunk from '../models/CaseChunk';
+
+export async function retrieveCaseDocuments(query: string, caseId: string, k: number = 5) {
+  const queryEmbedding = await generateTitanEmbedding(query);
+
+  const vectorResults = await CaseChunk.aggregate([
+    {
+      "$vectorSearch": {
+        index: "case_vector_index",
+        path: "embedding",
+        queryVector: queryEmbedding,
+        numCandidates: k * 10,
+        limit: k * 2,
+        filter: { caseId: caseId }
+      }
+    }
+  ]);
+
+  if (vectorResults.length === 0) return [];
+  
+  const textsToRerank = vectorResults.map(c => c.chunkText);
+  const rerankedResults = await cohereRerank(query, textsToRerank, k);
+
+  return rerankedResults.map(r => {
+    const originalDoc = vectorResults[r.index];
+    return {
+      chunkText: originalDoc.chunkText,
+      sourceDocId: originalDoc.sourceDocId,
+      relevanceScore: r.relevance_score
+    };
+  });
+}
+
+export async function mockRetrieveCaseDocuments(query: string, caseId: string, k: number = 5) {
+  const allDocs = await CaseChunk.find({
+    caseId: caseId
+  }).limit(k);
+
+  return allDocs.map(doc => ({
+    chunkText: doc.chunkText,
+    sourceDocId: doc.sourceDocId,
+    relevanceScore: 0.99
+  }));
+}
