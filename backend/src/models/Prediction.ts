@@ -10,6 +10,7 @@ export interface IPrediction extends Document {
   requiresHumanReview?: boolean;
   patternEvidence?: any;
   detailedAnalysis?: string;
+  overrides?: any[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +26,14 @@ const PredictionSchema: Schema = new Schema(
     requiresHumanReview: { type: Boolean, default: false },
     patternEvidence: { type: Schema.Types.Mixed },
     detailedAnalysis: { type: String },
+    overrides: [{
+      field: { type: String, required: true },
+      originalValue: { type: Schema.Types.Mixed },
+      newValue: { type: Schema.Types.Mixed },
+      reason: { type: String, required: true },
+      actorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+      timestamp: { type: Date, default: Date.now }
+    }],
   },
   { timestamps: true }
 );
