@@ -1,11 +1,13 @@
 import express from 'express';
+import multer from 'multer';
 import {
   createCase,
   getCases,
   getCaseById,
   updateCaseInput,
   updateCaseStatement,
-  addTimelineEvent
+  addTimelineEvent,
+  uploadDocument
 } from '../controllers/CaseController';
 import {
   analyzeCase,
@@ -18,6 +20,7 @@ import {
 import { protect } from '../middleware/authMiddleware';
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.use(protect);
 
@@ -31,6 +34,7 @@ router.route('/:id')
 router.put('/:id/input', updateCaseInput);
 router.put('/:id/statement', updateCaseStatement);
 router.post('/:id/timeline', addTimelineEvent);
+router.post('/:id/documents', upload.single('file'), uploadDocument as any);
 
 // Mock ML Routes
 router.post('/:id/analyze', analyzeCase);

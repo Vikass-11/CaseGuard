@@ -50,8 +50,11 @@ export const getCaseById = async (req: AuthRequest, res: Response, next: NextFun
     const inputs = await CaseInput.findOne({ caseId: id });
     const statement = await CaseStatement.findOne({ caseId: id });
     const timeline = await TimelineEvent.find({ caseId: id, organizationId: req.user.organizationId }).sort({ date: 1 });
+    
+    const CaseDocument = (await import('../models/CaseDocument')).default;
+    const documents = await CaseDocument.find({ caseId: id }).select('-textContent'); // Exclude full text to save bandwidth
 
-    res.json({ case: caseDoc, inputs, statement, timeline });
+    res.json({ case: caseDoc, inputs, statement, timeline, documents });
   } catch (error) {
     next(error);
   }
@@ -71,7 +74,33 @@ export const updateCaseInput = async (req: AuthRequest, res: Response, next: Nex
 export const updateCaseStatement = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const statement = await CaseStatement.findOneAndUpdate({ caseId: id }, { ...req.body, caseId: id }, { new: true, upsert: true });
+    
+    let anonymizedText = req.body.anonymizedText;
+    if (req.body.originalText) {
+      try {
+        const piiResponse = await fetch('http://localhost:5001/anonymize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: req.body.originalText, caseId: id })
+        });
+        if (piiResponse.ok) {
+          const piiData = await piiResponse.json();
+          anonymizedText = piiData.anonymizedText || req.body.originalText;
+        } else {
+          console.error('PII service failed with status', piiResponse.status);
+          anonymizedText = req.body.originalText;
+        }
+      } catch (err) {
+        console.error('Failed to call PII service', err);
+        anonymizedText = req.body.originalText;
+      }
+    }
+
+    const statement = await CaseStatement.findOneAndUpdate(
+      { caseId: id }, 
+      { ...req.body, anonymizedText, caseId: id }, 
+      { new: true, upsert: true }
+    );
     await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'UPDATE', collectionName: 'CaseStatement', documentId: statement._id });
     res.json(statement);
   } catch (error) {
@@ -85,6 +114,61 @@ export const addTimelineEvent = async (req: AuthRequest, res: Response, next: Ne
     const event = await TimelineEvent.create({ ...req.body, caseId: id, organizationId: req.user.organizationId });
     await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'CREATE', collectionName: 'TimelineEvent', documentId: event._id });
     res.status(201).json(event);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const uploadDocument = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    const fileText = req.file.buffer.toString('utf-8');
+
+    // 1. Save locally in MongoDB (Metadata + Text)
+    const CaseDocument = (await import('../models/CaseDocument')).default;
+    const doc = await CaseDocument.create({
+      caseId: id,
+      organizationId: req.user.organizationId,
+      uploadedBy: req.user._id,
+      fileName: req.file.originalname,
+      fileType: req.file.mimetype,
+      textContent: fileText
+    });
+
+    // 2. Forward to Knowledge Service for Embedding
+    const KNOWLEDGE_SERVICE_URL = process.env.KNOWLEDGE_SERVICE_URL || 'http://localhost:5002';
+    try {
+      const ingestResponse = await fetch(`${KNOWLEDGE_SERVICE_URL}/api/ingest/case-document`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          caseId: id, 
+          sourceDocId: doc._id.toString(), 
+          text: fileText 
+        })
+      });
+
+      if (!ingestResponse.ok) {
+        console.error('Failed to ingest document into vector DB', ingestResponse.status);
+      }
+    } catch (err) {
+      console.error('Knowledge service unreachable:', err);
+    }
+
+    await AuditLog.create({ 
+      organizationId: req.user.organizationId, 
+      actorId: req.user._id, 
+      action: 'CREATE', 
+      collectionName: 'CaseDocument', 
+      documentId: doc._id 
+    });
+
+    res.status(201).json(doc);
   } catch (error) {
     next(error);
   }
