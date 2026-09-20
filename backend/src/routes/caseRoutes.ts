@@ -10,8 +10,10 @@ import {
 import {
   analyzeCase,
   generateBrief,
+  saveBrief,
   generateRecommendations,
-  saveBrief
+  overridePrediction,
+  overrideRecommendation
 } from '../controllers/MockMLController';
 import { protect } from '../middleware/authMiddleware';
 
@@ -35,5 +37,7 @@ router.post('/:id/analyze', analyzeCase);
 router.post('/:id/generate-brief', generateBrief);
 router.put('/:id/brief', saveBrief);
 router.post('/:id/generate-recommendations', generateRecommendations);
+router.put('/:id/prediction/override', overridePrediction);
+router.put('/:id/recommendation/override', overrideRecommendation);
 
 export default router;
