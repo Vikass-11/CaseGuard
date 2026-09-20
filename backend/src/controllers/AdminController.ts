@@ -103,3 +103,30 @@ export const getAuditLogs = async (req: AuthRequest, res: Response, next: NextFu
     next(error);
   }
 };
+
+export const getEvalMetrics = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const Prediction = (await import('../models/Prediction')).default;
+    const Recommendation = (await import('../models/Recommendation')).default;
+    
+    // Calculate Prediction Override Rate
+    const totalPredictions = await Prediction.countDocuments();
+    const overriddenPredictions = await Prediction.countDocuments({ 'overrides.0': { $exists: true } });
+    const predictionOverrideRate = totalPredictions > 0 ? (overriddenPredictions / totalPredictions) * 100 : 0;
+    
+    // Calculate Recommendation Override Rate
+    const totalRecommendations = await Recommendation.countDocuments();
+    const overriddenRecommendations = await Recommendation.countDocuments({ 'overrides.0': { $exists: true } });
+    const recommendationOverrideRate = totalRecommendations > 0 ? (overriddenRecommendations / totalRecommendations) * 100 : 0;
+    
+    res.json({
+      metrics: [
+        { label: 'Prediction Override Rate', value: predictionOverrideRate.toFixed(1) + '%', description: 'Percentage of AI severity predictions corrected by humans' },
+        { label: 'Recommendation Override Rate', value: recommendationOverrideRate.toFixed(1) + '%', description: 'Percentage of AI recommendations edited by humans' },
+        { label: 'Total Predictions', value: totalPredictions.toString(), description: 'Total AI severity assessments generated' }
+      ]
+    });
+  } catch (error) {
+    next(error);
+  }
+};

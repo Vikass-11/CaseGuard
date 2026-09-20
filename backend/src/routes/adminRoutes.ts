@@ -1,5 +1,5 @@
 import express from 'express';
-import { getUsers, createUser, updateUserRole, getAuditLogs, deleteUser } from '../controllers/AdminController';
+import { getUsers, createUser, updateUserRole, getAuditLogs, deleteUser, getEvalMetrics } from '../controllers/AdminController';
 import { protect } from '../middleware/authMiddleware';
 import { authorize } from '../middleware/roleMiddleware';
 
@@ -13,5 +13,6 @@ router.post('/users', createUser);
 router.put('/users/:id/role', updateUserRole);
 router.delete('/users/:id', deleteUser);
 router.get('/audit-logs', getAuditLogs);
+router.get('/evals/metrics', getEvalMetrics);
 
 export default router;
