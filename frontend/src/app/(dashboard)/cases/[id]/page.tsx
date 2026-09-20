@@ -1,14 +1,17 @@
 'use client';
+import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Activity, FileText } from 'lucide-react';
+import { Activity, FileText, Upload, File } from 'lucide-react';
 import { CaseDetailSkeleton } from '@/components/ui/skeletons';
 
 export default function CaseDetailsPage() {
   const router = useRouter();
   const { id } = useParams();
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const { data: caseResponse, isLoading: loading, isError } = useQuery({
     queryKey: ['case', id],
@@ -22,6 +25,25 @@ export default function CaseDetailsPage() {
 
   if (loading) return <div className="p-6"><CaseDetailSkeleton /></div>;
   if (isError || !data?.case) return <div className="p-20 text-center"><p className="text-xl text-foreground font-bold tracking-tight uppercase">Case not found or failed to load.</p></div>;
+
+  const handleFileUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await api.post(`/cases/${id}/documents`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setFile(null);
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
@@ -56,6 +78,7 @@ export default function CaseDetailsPage() {
             <TabsTrigger value="overview" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground">Overview</TabsTrigger>
             <TabsTrigger value="statement" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground">Statement</TabsTrigger>
             <TabsTrigger value="timeline" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground">Timeline</TabsTrigger>
+            <TabsTrigger value="documents" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground">Documents</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className="mt-6">
@@ -104,14 +127,87 @@ export default function CaseDetailsPage() {
                 {data.timeline?.length === 0 ? (
                   <p className="text-muted-foreground font-medium">No events recorded yet.</p>
                 ) : (
-                  <div className="space-y-8">
-                    {data.timeline?.map((ev: any) => (
-                      <div key={ev._id} className="relative pl-6 before:absolute before:left-0 before:top-2 before:bottom-[-2rem] last:before:bottom-0 before:w-px before:bg-border">
-                        <div className="absolute left-[-4px] top-2 h-2 w-2 rounded-full bg-white ring-4 ring-background" />
+                  <div className="space-y-12">
+                    {data.timeline?.map((ev: any, idx: number) => {
+                      let colorClass = 'bg-border ring-background text-muted-foreground border-border';
+                      let dotClass = 'bg-white ring-background border-border';
+                      const sev = ev.severity?.toLowerCase() || '';
+                      
+                      if (sev.includes('low')) {
+                        colorClass = 'bg-green-100 text-green-700 border-green-200';
+                        dotClass = 'bg-green-500 ring-green-100';
+                      } else if (sev.includes('medium') || sev.includes('moderate')) {
+                        colorClass = 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                        dotClass = 'bg-yellow-500 ring-yellow-100';
+                      } else if (sev.includes('high') || sev.includes('severe')) {
+                        colorClass = 'bg-orange-100 text-orange-800 border-orange-200';
+                        dotClass = 'bg-orange-500 ring-orange-100';
+                      } else if (sev.includes('critical') || sev.includes('life-threatening')) {
+                        colorClass = 'bg-red-100 text-red-700 border-red-200 font-extrabold';
+                        dotClass = 'bg-red-500 ring-red-100 animate-pulse';
+                      }
+
+                      return (
+                        <div key={ev._id} className="relative pl-8 before:absolute before:left-0 before:top-4 before:bottom-[-3rem] last:before:bottom-0 before:w-px before:bg-border">
+                          <div className={`absolute left-[-5px] top-1.5 h-3 w-3 rounded-full ring-4 ${dotClass}`} />
+                          <div className="bg-card border border-border/60 p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group">
+                            <div className="flex justify-between items-start mb-2">
+                              <p className="text-xs font-bold tracking-widest uppercase text-muted-foreground">{new Date(ev.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                              <span className={`inline-block px-3 py-1 text-[10px] uppercase tracking-widest border rounded-md shadow-sm ${colorClass}`}>
+                                {ev.severity || 'Unrated'}
+                              </span>
+                            </div>
+                            <p className="text-sm text-foreground font-medium leading-relaxed group-hover:text-primary transition-colors">{ev.description}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="documents" className="mt-6">
+            <div className="bg-card rounded-3xl border border-border overflow-hidden">
+              <div className="p-8 border-b border-border flex justify-between items-center">
+                <h3 className="text-xs font-bold tracking-widest uppercase text-muted-foreground">Case Documents</h3>
+              </div>
+              <div className="p-8">
+                {/* Upload Form */}
+                <form onSubmit={handleFileUpload} className="mb-10 p-6 bg-muted/20 border border-border/80 rounded-2xl">
+                  <h4 className="text-sm font-bold mb-4 uppercase tracking-widest">Upload New Document</h4>
+                  <div className="flex items-center space-x-4">
+                    <input 
+                      type="file" 
+                      accept=".txt,.md"
+                      onChange={(e) => setFile(e.target.files?.[0] || null)}
+                      className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+                    />
+                    <button 
+                      type="submit" 
+                      disabled={!file || uploading}
+                      className="px-6 py-2 bg-primary text-primary-foreground text-xs font-bold uppercase tracking-widest rounded-full disabled:opacity-50 flex items-center shadow-md transition-all hover:bg-primary/90"
+                    >
+                      {uploading ? 'Uploading...' : <><Upload className="w-4 h-4 mr-2" /> Upload & Parse</>}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-3 uppercase tracking-wide">Supports .txt and .md. Document will be automatically chunked and embedded for AI analysis.</p>
+                </form>
+
+                {/* Document List */}
+                {data.documents?.length === 0 ? (
+                  <p className="text-muted-foreground font-medium text-sm">No documents uploaded yet.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {data.documents?.map((doc: any) => (
+                      <div key={doc._id} className="flex items-start p-4 border border-border/60 rounded-2xl bg-card shadow-sm hover:shadow-md transition-all">
+                        <div className="bg-primary/10 p-3 rounded-xl mr-4 text-primary">
+                          <File className="w-6 h-6" />
+                        </div>
                         <div>
-                          <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">{new Date(ev.date).toLocaleDateString()}</p>
-                          <p className="text-sm text-foreground font-medium mt-2">{ev.description}</p>
-                          <span className="inline-block mt-3 px-2 py-1 text-[10px] font-bold uppercase tracking-widest border border-border text-muted-foreground rounded-md">{ev.severity}</span>
+                          <p className="font-bold text-foreground text-sm">{doc.fileName}</p>
+                          <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">{new Date(doc.uploadedAt).toLocaleDateString()}</p>
                         </div>
                       </div>
                     ))}
