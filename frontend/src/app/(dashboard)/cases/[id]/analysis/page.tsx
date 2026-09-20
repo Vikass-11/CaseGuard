@@ -6,6 +6,13 @@ import { toast } from 'sonner';
 import api from '@/lib/api';
 import { ArrowLeft, AlertTriangle, ShieldCheck, Activity, ChevronRight, RefreshCw, FileText } from 'lucide-react';
 import { CaseDetailSkeleton } from '@/components/ui/skeletons';
+import { OverrideDialog } from '@/components/ui/OverrideDialog';
+
+const OverriddenBadge = ({ doc, field }: { doc: any, field: string }) => {
+  const overridden = doc?.overrides?.some((o: any) => o.field === field);
+  if (!overridden) return null;
+  return <span className="ml-2 inline-flex text-[8px] font-bold uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded shadow-sm" title="Human Overridden">Edited</span>;
+};
 
 export default function CaseAnalysisPage() {
   const router = useRouter();
@@ -34,6 +41,28 @@ export default function CaseAnalysisPage() {
     },
     onError: () => {
       toast.error('Failed to run analysis. Please try again.');
+    }
+  });
+
+  const overridePredictionMutation = useMutation({
+    mutationFn: async ({ field, newValue, reason }: any) => {
+      const res = await api.put(`/cases/${id}/prediction/override`, { field, newValue, reason });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      setPrediction(data);
+      toast.success('Prediction overridden successfully.');
+    }
+  });
+
+  const overrideRecommendationMutation = useMutation({
+    mutationFn: async ({ field, newValue, reason }: any) => {
+      const res = await api.put(`/cases/${id}/recommendation/override`, { field, newValue, reason });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      setRecommendation(data);
+      toast.success('Recommendation overridden successfully.');
     }
   });
 
@@ -114,17 +143,21 @@ export default function CaseAnalysisPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col items-center justify-center p-8 bg-muted/40 rounded-2xl border border-border">
-                  <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-4">Severity Level</p>
-                  <span className="inline-flex items-center px-6 py-2 text-sm font-bold uppercase tracking-widest bg-[oklch(0.96_0.03_25)] text-[oklch(0.5_0.14_25)] border border-[oklch(0.85_0.06_25)] rounded-full shadow-sm">
-                    {prediction.severity}
-                  </span>
+                  <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-4">Severity Level <OverriddenBadge doc={prediction} field="severity" /></p>
+                  <OverrideDialog title="Severity Level" field="severity" currentValue={prediction.severity} type="select" options={['Moderate', 'Severe', 'Life-Threatening']} onSave={(field, newValue, reason) => overridePredictionMutation.mutate({ field, newValue, reason })} isPending={overridePredictionMutation.isPending}>
+                    <span className="inline-flex items-center px-6 py-2 text-sm font-bold uppercase tracking-widest bg-[oklch(0.96_0.03_25)] text-[oklch(0.5_0.14_25)] border border-[oklch(0.85_0.06_25)] rounded-full shadow-sm">
+                      {prediction.severity}
+                    </span>
+                  </OverrideDialog>
                 </div>
                 <div className="flex flex-col items-center justify-center p-8 bg-muted/40 rounded-2xl border border-border">
-                  <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-4">Escalation Score</p>
-                  <div className="flex items-baseline space-x-2">
-                    <span className="text-6xl font-extrabold text-foreground tracking-tighter">{prediction.escalationScore}</span>
-                    <span className="text-xl font-bold text-muted-foreground">/ 100</span>
-                  </div>
+                  <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-4">Escalation Score <OverriddenBadge doc={prediction} field="escalationScore" /></p>
+                  <OverrideDialog title="Escalation Score" field="escalationScore" currentValue={prediction.escalationScore} type="number" onSave={(field, newValue, reason) => overridePredictionMutation.mutate({ field, newValue, reason })} isPending={overridePredictionMutation.isPending}>
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-6xl font-extrabold text-foreground tracking-tighter">{prediction.escalationScore}</span>
+                      <span className="text-xl font-bold text-muted-foreground">/ 100</span>
+                    </div>
+                  </OverrideDialog>
                 </div>
               </div>
             </div>
@@ -150,28 +183,32 @@ export default function CaseAnalysisPage() {
             <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-12">
               <div>
                 <h4 className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-6 flex items-center">
-                  <Activity className="w-4 h-4 mr-2" /> Abuse Patterns
+                  <Activity className="w-4 h-4 mr-2" /> Abuse Patterns <OverriddenBadge doc={prediction} field="patterns" />
                 </h4>
-                <div className="flex flex-wrap gap-3">
-                  {prediction.patterns.map((p: string, i: number) => (
-                    <span key={i} className="inline-flex items-center px-4 py-2.5 text-xs font-bold uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-200 rounded-xl">
-                      {p}
-                    </span>
-                  ))}
-                </div>
+                <OverrideDialog title="Abuse Patterns" field="patterns" currentValue={prediction.patterns} type="array" onSave={(field, newValue, reason) => overridePredictionMutation.mutate({ field, newValue, reason })} isPending={overridePredictionMutation.isPending}>
+                  <div className="flex flex-wrap gap-3">
+                    {prediction.patterns.map((p: string, i: number) => (
+                      <span key={i} className="inline-flex items-center px-4 py-2.5 text-xs font-bold uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-200 rounded-xl">
+                        {p}
+                      </span>
+                    ))}
+                  </div>
+                </OverrideDialog>
               </div>
               <div>
                 <h4 className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-6 flex items-center">
-                  <AlertTriangle className="w-4 h-4 mr-2" /> Risk Triggers
+                  <AlertTriangle className="w-4 h-4 mr-2" /> Risk Triggers <OverriddenBadge doc={prediction} field="triggers" />
                 </h4>
-                <ul className="space-y-4">
-                  {prediction.triggers.map((t: string, i: number) => (
-                    <li key={i} className="flex items-start text-sm text-foreground font-medium p-3 bg-muted/30 rounded-xl border border-border/50">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 mr-3 shrink-0" />
-                      {t}
-                    </li>
-                  ))}
-                </ul>
+                <OverrideDialog title="Risk Triggers" field="triggers" currentValue={prediction.triggers} type="array" onSave={(field, newValue, reason) => overridePredictionMutation.mutate({ field, newValue, reason })} isPending={overridePredictionMutation.isPending}>
+                  <ul className="space-y-4">
+                    {prediction.triggers.map((t: string, i: number) => (
+                      <li key={i} className="flex items-start text-sm text-foreground font-medium p-3 bg-muted/30 rounded-xl border border-border/50">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 mr-3 shrink-0" />
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                </OverrideDialog>
               </div>
             </div>
           </div>
@@ -183,53 +220,64 @@ export default function CaseAnalysisPage() {
                 <ShieldCheck className="h-6 w-6 mr-3 text-primary" />
                 Action Navigator
               </h3>
-              <div className="flex items-center bg-destructive/10 px-4 py-2 rounded-full border border-destructive/20">
-                <AlertTriangle className="h-4 w-4 mr-2 text-destructive" />
-                <span className="text-[10px] font-bold text-destructive uppercase tracking-widest">{recommendation.urgency}</span>
-              </div>
+              <OverrideDialog title="Urgency" field="urgency" currentValue={recommendation.urgency} type="select" options={['Standard Follow-up', 'Immediate Action Required', 'Critical Intervention']} onSave={(field, newValue, reason) => overrideRecommendationMutation.mutate({ field, newValue, reason })} isPending={overrideRecommendationMutation.isPending}>
+                <div className="flex items-center bg-destructive/10 px-4 py-2 rounded-full border border-destructive/20">
+                  <AlertTriangle className="h-4 w-4 mr-2 text-destructive" />
+                  <span className="text-[10px] font-bold text-destructive uppercase tracking-widest">{recommendation.urgency}</span>
+                  <OverriddenBadge doc={recommendation} field="urgency" />
+                </div>
+              </OverrideDialog>
             </div>
             
             <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-12">
               
               <div>
                 <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-6 flex items-center">
-                  <FileText className="w-4 h-4 mr-2" /> Evidence Checklist
+                  <FileText className="w-4 h-4 mr-2" /> Evidence Checklist <OverriddenBadge doc={recommendation} field="evidenceChecklist" />
                 </p>
-                <ul className="space-y-5">
-                  {recommendation.evidenceChecklist.map((item: string, i: number) => (
-                    <li key={i} className="flex items-start text-sm text-foreground font-medium leading-relaxed bg-muted/20 p-4 rounded-xl border border-border/50">
-                      <ChevronRight className="h-5 w-5 text-primary mr-3 shrink-0 mt-0.5" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+                <OverrideDialog title="Evidence Checklist" field="evidenceChecklist" currentValue={recommendation.evidenceChecklist} type="array" onSave={(field, newValue, reason) => overrideRecommendationMutation.mutate({ field, newValue, reason })} isPending={overrideRecommendationMutation.isPending}>
+                  <ul className="space-y-5">
+                    {recommendation.evidenceChecklist.map((item: string, i: number) => (
+                      <li key={i} className="flex items-start text-sm text-foreground font-medium leading-relaxed bg-muted/20 p-4 rounded-xl border border-border/50">
+                        <ChevronRight className="h-5 w-5 text-primary mr-3 shrink-0 mt-0.5" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </OverrideDialog>
               </div>
 
               <div>
                 <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-6 flex items-center">
-                  <ShieldCheck className="w-4 h-4 mr-2" /> Follow-up Questions
+                  <ShieldCheck className="w-4 h-4 mr-2" /> Follow-up Questions <OverriddenBadge doc={recommendation} field="followUpQuestions" />
                 </p>
-                <ul className="space-y-5">
-                  {recommendation.followUpQuestions.map((item: string, i: number) => (
-                    <li key={i} className="flex items-start text-sm text-foreground font-medium leading-relaxed bg-muted/20 p-4 rounded-xl border border-border/50">
-                      <div className="h-2 w-2 rounded-full bg-primary mt-2 mr-3 shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+                <OverrideDialog title="Follow-up Questions" field="followUpQuestions" currentValue={recommendation.followUpQuestions} type="array" onSave={(field, newValue, reason) => overrideRecommendationMutation.mutate({ field, newValue, reason })} isPending={overrideRecommendationMutation.isPending}>
+                  <ul className="space-y-5">
+                    {recommendation.followUpQuestions.map((item: string, i: number) => (
+                      <li key={i} className="flex items-start text-sm text-foreground font-medium leading-relaxed bg-muted/20 p-4 rounded-xl border border-border/50">
+                        <div className="h-2 w-2 rounded-full bg-primary mt-2 mr-3 shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </OverrideDialog>
               </div>
 
             </div>
 
             <div className="p-8 border-t border-border bg-muted/10">
-              <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-5 text-center">Recommended Referrals</p>
-              <div className="flex flex-wrap gap-3 justify-center">
-                {recommendation.referrals.map((item: string, i: number) => (
-                  <span key={i} className="inline-flex items-center px-4 py-2 text-xs font-bold uppercase tracking-widest bg-background text-foreground border border-border/80 rounded-full shadow-sm">
-                    {item}
-                  </span>
-                ))}
-              </div>
+              <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-5 text-center flex items-center justify-center">
+                Recommended Referrals <OverriddenBadge doc={recommendation} field="referrals" />
+              </p>
+              <OverrideDialog title="Referrals" field="referrals" currentValue={recommendation.referrals} type="array" onSave={(field, newValue, reason) => overrideRecommendationMutation.mutate({ field, newValue, reason })} isPending={overrideRecommendationMutation.isPending}>
+                <div className="flex flex-wrap gap-3 justify-center">
+                  {recommendation.referrals.map((item: string, i: number) => (
+                    <span key={i} className="inline-flex items-center px-4 py-2 text-xs font-bold uppercase tracking-widest bg-background text-foreground border border-border/80 rounded-full shadow-sm">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </OverrideDialog>
             </div>
           </div>
           
