@@ -6,6 +6,7 @@ export interface IRecommendation extends Document {
   evidenceChecklist: string[];
   followUpQuestions: string[];
   referrals: string[];
+  overrides?: any[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +18,14 @@ const RecommendationSchema: Schema = new Schema(
     evidenceChecklist: [{ type: String }],
     followUpQuestions: [{ type: String }],
     referrals: [{ type: String }],
+    overrides: [{
+      field: { type: String, required: true },
+      originalValue: { type: Schema.Types.Mixed },
+      newValue: { type: Schema.Types.Mixed },
+      reason: { type: String, required: true },
+      actorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+      timestamp: { type: Date, default: Date.now }
+    }],
   },
   { timestamps: true }
 );
