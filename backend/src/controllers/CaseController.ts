@@ -54,7 +54,12 @@ export const getCaseById = async (req: AuthRequest, res: Response, next: NextFun
     const CaseDocument = (await import('../models/CaseDocument')).default;
     const documents = await CaseDocument.find({ caseId: id }).select('-textContent'); // Exclude full text to save bandwidth
 
-    res.json({ case: caseDoc, inputs, statement, timeline, documents });
+    const PredictionModel = (await import('../models/Prediction')).default;
+    const RecommendationModel = (await import('../models/Recommendation')).default;
+    const prediction = await PredictionModel.findOne({ caseId: id });
+    const recommendation = await RecommendationModel.findOne({ caseId: id });
+
+    res.json({ case: caseDoc, inputs, statement, timeline, documents, prediction, recommendation });
   } catch (error) {
     next(error);
   }
