@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "start": "ts-node src/index.ts",
     "test": "jest",
     "build": "tsc"
   },
@@ -13,12 +15,16 @@
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1116.0",
     "@langchain/core": "^1.2.9",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "langchain": "^1.5.10",
     "mongoose": "^9.9.3",
     "pdf-parse": "^2.4.5"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.2.0",
     "jest": "^30.4.2",
