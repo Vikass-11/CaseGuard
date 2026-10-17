@@ -43,18 +43,20 @@ export const assessRisk = async (req: Request, res: Response): Promise<void> => 
 
       validatedData = RiskSchema.parse(mockLLMResponse);
     } else {
-      const apiKey = process.env.OPENAI_API_KEY;
+      const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
       if (!apiKey) {
-        res.status(500).json({ error: 'OPENAI_API_KEY is required when USE_MOCK_LLM is false' });
+        res.status(500).json({ error: 'API key is required when USE_MOCK_LLM is false' });
         return;
       }
 
-      const openai = new OpenAI({ apiKey });
+      const openai = process.env.GROQ_API_KEY
+        ? new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: 'https://api.groq.com/openai/v1' })
+        : new OpenAI({ apiKey });
 
       const prompt = getRiskAssessmentPrompt(ruleFlags, patterns, researchPassages);
       
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: process.env.GROQ_API_KEY ? 'openai/gpt-oss-120b' : 'gpt-4o-mini',
         messages: [
           { role: 'system', content: 'You are an expert AI risk assessment agent.' },
           { role: 'user', content: prompt }
