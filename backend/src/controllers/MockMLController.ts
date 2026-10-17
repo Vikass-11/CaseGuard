@@ -23,13 +23,14 @@ export const analyzeCase = async (req: Request, res: Response, next: NextFunctio
 export const generateBrief = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const id = req.params.id as string;
+        const orgId = (req as any).user?.organizationId;
         const useMockML = process.env.USE_MOCK_ML === 'true';
         
         const brief = useMockML
             ? await MockMLService.generateBrief(id)
-            : await RealMLService.generateBrief(id);
+            : await RealMLService.generateBrief(id, orgId);
             
-        await AuditLog.create({ organizationId: (req as any).user.organizationId, actorId: (req as any).user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
+        await AuditLog.create({ organizationId: orgId, actorId: (req as any).user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
         res.json(brief);
     }
     catch (error) {
@@ -40,7 +41,7 @@ export const generateBrief = async (req: Request, res: Response, next: NextFunct
 export const generateRecommendations = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const id = req.params.id as string;
-        const orgId = (req as any).user.organizationId;
+        const orgId = (req as any).user?.organizationId;
         const useMockML = process.env.USE_MOCK_ML === 'true';
 
         const prediction = useMockML
@@ -49,9 +50,9 @@ export const generateRecommendations = async (req: Request, res: Response, next:
 
         const recommendations = useMockML
             ? await MockMLService.generateRecommendations(id, prediction.severity)
-            : await RealMLService.generateRecommendations(id, prediction.severity);
+            : await RealMLService.generateRecommendations(id, prediction.severity, orgId);
 
-        await AuditLog.create({ organizationId: (req as any).user.organizationId, actorId: (req as any).user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
+        await AuditLog.create({ organizationId: orgId, actorId: (req as any).user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
         res.json(recommendations);
     }
     catch (error) {
@@ -171,3 +172,17 @@ export const overrideRecommendation = async (req: Request, res: Response, next: 
         next(error);
     }
 };
+
+export const analyzePractice = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { statement, practiceType } = req.body;
+        if (!statement || typeof statement !== 'string' || !statement.trim()) {
+            return res.status(400).json({ error: 'Statement is required for practice analysis.' });
+        }
+        const report = await RealMLService.analyzePracticeStatement(statement, practiceType || 'General Statement');
+        res.json(report);
+    } catch (error) {
+        next(error);
+    }
+};
+
