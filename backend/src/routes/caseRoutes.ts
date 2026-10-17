@@ -15,7 +15,8 @@ import {
   saveBrief,
   generateRecommendations,
   overridePrediction,
-  overrideRecommendation
+  overrideRecommendation,
+  analyzePractice
 } from '../controllers/MockMLController';
 import { protect } from '../middleware/authMiddleware';
 
@@ -23,6 +24,9 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.use(protect);
+
+// Practice Analyser Sandbox Route (must be before /:id)
+router.post('/practice/analyze', analyzePractice);
 
 router.route('/')
   .post(createCase)
