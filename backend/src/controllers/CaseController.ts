@@ -38,6 +38,8 @@ export const getCases = async (req: AuthRequest, res: Response, next: NextFuncti
   }
 };
 
+import { redactPiiFallback } from '../utils/piiFallback';
+
 export const getCaseById = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
@@ -49,7 +51,7 @@ export const getCaseById = async (req: AuthRequest, res: Response, next: NextFun
 
     const inputs = await CaseInput.findOne({ caseId: id });
     const statement = await CaseStatement.findOne({ caseId: id });
-    const timeline = await TimelineEvent.find({ caseId: id, organizationId: req.user.organizationId }).sort({ date: 1 });
+    const timeline = await TimelineEvent.find({ caseId: id, organizationId: req.user.organizationId }).sort({ eventDate: 1 });
     
     const CaseDocument = (await import('../models/CaseDocument')).default;
     const documents = await CaseDocument.find({ caseId: id }).select('-textContent'); // Exclude full text to save bandwidth
@@ -79,31 +81,36 @@ export const updateCaseInput = async (req: AuthRequest, res: Response, next: Nex
 export const updateCaseStatement = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    const PII_SERVICE_URL = process.env.PII_SERVICE_URL || 'http://localhost:5001';
     
+    const textToAnonymize = req.body.originalText || req.body.statement || req.body.text;
     let anonymizedText = req.body.anonymizedText;
-    if (req.body.originalText) {
+
+    if (textToAnonymize) {
       try {
-        const piiResponse = await fetch('http://localhost:5001/anonymize', {
+        const piiResponse = await fetch(`${PII_SERVICE_URL}/anonymize`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: req.body.originalText, caseId: id })
+          body: JSON.stringify({ text: textToAnonymize, caseId: id })
         });
         if (piiResponse.ok) {
-          const piiData = await piiResponse.json();
-          anonymizedText = piiData.anonymizedText || req.body.originalText;
+          const piiData: any = await piiResponse.json();
+          anonymizedText = piiData.anonymizedText;
         } else {
-          console.error('PII service failed with status', piiResponse.status);
-          anonymizedText = req.body.originalText;
+          console.warn(`PII service returned HTTP ${piiResponse.status}. Utilizing local safety redaction.`);
+          anonymizedText = redactPiiFallback(textToAnonymize);
         }
       } catch (err) {
-        console.error('Failed to call PII service', err);
-        anonymizedText = req.body.originalText;
+        console.warn('PII microservice unreachable. Falling back to local safety redaction.', err);
+        anonymizedText = redactPiiFallback(textToAnonymize);
       }
+    } else if (!anonymizedText) {
+      anonymizedText = 'No statement recorded.';
     }
 
     const statement = await CaseStatement.findOneAndUpdate(
       { caseId: id }, 
-      { ...req.body, anonymizedText, caseId: id }, 
+      { anonymizedText, caseId: id }, 
       { new: true, upsert: true }
     );
     await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'UPDATE', collectionName: 'CaseStatement', documentId: statement._id });
@@ -116,7 +123,17 @@ export const updateCaseStatement = async (req: AuthRequest, res: Response, next:
 export const addTimelineEvent = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const event = await TimelineEvent.create({ ...req.body, caseId: id, organizationId: req.user.organizationId });
+    const eventDate = req.body.eventDate || req.body.date || new Date();
+    const severityLevel = req.body.severityLevel || req.body.severity || 'Moderate';
+    const description = req.body.description || '';
+
+    const event = await TimelineEvent.create({
+      caseId: id,
+      organizationId: req.user.organizationId,
+      eventDate,
+      severityLevel,
+      description
+    });
     await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'CREATE', collectionName: 'TimelineEvent', documentId: event._id });
     res.status(201).json(event);
   } catch (error) {
