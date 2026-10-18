@@ -17,7 +17,7 @@ import {
   overridePrediction,
   overrideRecommendation,
   analyzePractice
-} from '../controllers/MockMLController';
+} from '../controllers/AIAnalysisController';
 import { protect } from '../middleware/authMiddleware';
 
 const router = express.Router();
@@ -40,7 +40,7 @@ router.put('/:id/statement', updateCaseStatement);
 router.post('/:id/timeline', addTimelineEvent);
 router.post('/:id/documents', upload.single('file'), uploadDocument as any);
 
-// Mock ML Routes
+// Clinical AI Analysis & Strategic Recommendation Routes
 router.post('/:id/analyze', analyzeCase);
 router.post('/:id/generate-brief', generateBrief);
 router.put('/:id/brief', saveBrief);
