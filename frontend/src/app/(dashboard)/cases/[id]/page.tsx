@@ -1,17 +1,26 @@
 'use client';
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import api from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Activity, FileText, Upload, File } from 'lucide-react';
+import { Activity, FileText, Upload, File, Plus, Calendar, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { CaseDetailSkeleton } from '@/components/ui/skeletons';
 
 export default function CaseDetailsPage() {
   const router = useRouter();
   const { id } = useParams();
+  const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Timeline addition state
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [eventDate, setEventDate] = useState(new Date().toISOString().split('T')[0]);
+  const [severityLevel, setSeverityLevel] = useState('Moderate');
+  const [eventDescription, setEventDescription] = useState('');
+  const [addingEvent, setAddingEvent] = useState(false);
 
   const { data: caseResponse, isLoading: loading, isError } = useQuery({
     queryKey: ['case', id],
@@ -37,11 +46,35 @@ export default function CaseDetailsPage() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setFile(null);
-      window.location.reload();
+      queryClient.invalidateQueries({ queryKey: ['case', id] });
+      toast.success('Document uploaded and queued for vector search!');
     } catch (error) {
       console.error(error);
+      toast.error('Failed to upload document.');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleAddTimelineEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eventDescription.trim()) return;
+    setAddingEvent(true);
+    try {
+      await api.post(`/cases/${id}/timeline`, {
+        eventDate: new Date(eventDate),
+        severityLevel,
+        description: eventDescription.trim()
+      });
+      setEventDescription('');
+      setShowAddEvent(false);
+      queryClient.invalidateQueries({ queryKey: ['case', id] });
+      toast.success('Timeline incident added successfully!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to add timeline incident.');
+    } finally {
+      setAddingEvent(false);
     }
   };
 
@@ -120,41 +153,115 @@ export default function CaseDetailsPage() {
 
           <TabsContent value="timeline" className="mt-6">
             <div className="bg-card rounded-3xl border border-border overflow-hidden">
-              <div className="p-8 border-b border-border">
-                <h3 className="text-xs font-bold tracking-widest uppercase text-muted-foreground">Timeline Events</h3>
+              <div className="p-8 border-b border-border flex justify-between items-center">
+                <div>
+                  <h3 className="text-xs font-bold tracking-widest uppercase text-foreground">Timeline Incidents</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Chronological record of escalating abuse events and interventions</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddEvent(!showAddEvent)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground font-bold tracking-wider uppercase text-xs rounded-xl shadow-sm hover:bg-primary/90 transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  {showAddEvent ? 'Close Form' : 'Add Incident'}
+                </button>
               </div>
+
+              {/* Add Event Inline Form */}
+              {showAddEvent && (
+                <form onSubmit={handleAddTimelineEvent} className="p-8 border-b border-border/80 bg-muted/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                    <Calendar className="w-4 h-4" /> Record New Incident to Timeline
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-2">Date of Incident</label>
+                      <input
+                        type="date"
+                        required
+                        value={eventDate}
+                        onChange={e => setEventDate(e.target.value)}
+                        className="w-full bg-background border border-border/80 px-4 py-2.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-2">Severity Classification</label>
+                      <select
+                        value={severityLevel}
+                        onChange={e => setSeverityLevel(e.target.value)}
+                        className="w-full bg-background border border-border/80 px-4 py-2.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="Low">Low - Verbal / Minor Control</option>
+                        <option value="Moderate">Moderate - Escalating Intimidation / Threats</option>
+                        <option value="Severe">Severe - Physical Battery / Weapon Threats</option>
+                        <option value="Critical">Critical - Non-Fatal Strangulation / Life-Threatening</option>
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        type="submit"
+                        disabled={addingEvent}
+                        className="w-full bg-primary text-primary-foreground font-bold uppercase tracking-wider text-xs py-2.5 px-4 rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50"
+                      >
+                        {addingEvent ? 'Saving Incident...' : 'Save to Chronology'}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-2">Factual Description of Incident</label>
+                    <textarea
+                      required
+                      rows={2}
+                      value={eventDescription}
+                      onChange={e => setEventDescription(e.target.value)}
+                      placeholder="e.g. Perpetrator restricted airway and threatened harm if police were notified..."
+                      className="w-full bg-background border border-border/80 px-4 py-2.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 resize-y"
+                    />
+                  </div>
+                </form>
+              )}
+
               <div className="p-8">
                 {data.timeline?.length === 0 ? (
-                  <p className="text-muted-foreground font-medium">No events recorded yet.</p>
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Calendar className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
+                    <p className="text-sm font-semibold">No timeline incidents recorded yet.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Use the "Add Incident" button above to document factual chronology.</p>
+                  </div>
                 ) : (
                   <div className="space-y-12">
                     {data.timeline?.map((ev: any, idx: number) => {
-                      let colorClass = 'bg-border ring-background text-muted-foreground border-border';
-                      let dotClass = 'bg-white ring-background border-border';
-                      const sev = ev.severity?.toLowerCase() || '';
+                      let colorClass = 'bg-muted text-muted-foreground border-border/80';
+                      let dotClass = 'bg-primary ring-primary/20';
+                      const sev = (ev.severityLevel || ev.severity || '').toLowerCase();
+                      const rawDate = ev.eventDate || ev.date;
+                      const formattedDate = rawDate
+                        ? new Date(rawDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+                        : 'Date Unrecorded';
                       
                       if (sev.includes('low')) {
-                        colorClass = 'bg-green-100 text-green-700 border-green-200';
-                        dotClass = 'bg-green-500 ring-green-100';
+                        colorClass = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
+                        dotClass = 'bg-emerald-500 ring-emerald-500/20';
                       } else if (sev.includes('medium') || sev.includes('moderate')) {
-                        colorClass = 'bg-yellow-100 text-yellow-800 border-yellow-200';
-                        dotClass = 'bg-yellow-500 ring-yellow-100';
+                        colorClass = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30';
+                        dotClass = 'bg-amber-500 ring-amber-500/20';
                       } else if (sev.includes('high') || sev.includes('severe')) {
-                        colorClass = 'bg-orange-100 text-orange-800 border-orange-200';
-                        dotClass = 'bg-orange-500 ring-orange-100';
+                        colorClass = 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30';
+                        dotClass = 'bg-orange-500 ring-orange-500/20';
                       } else if (sev.includes('critical') || sev.includes('life-threatening')) {
-                        colorClass = 'bg-red-100 text-red-700 border-red-200 font-extrabold';
-                        dotClass = 'bg-red-500 ring-red-100 animate-pulse';
+                        colorClass = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 font-bold';
+                        dotClass = 'bg-rose-500 ring-rose-500/20 animate-pulse';
                       }
 
                       return (
-                        <div key={ev._id} className="relative pl-8 before:absolute before:left-0 before:top-4 before:bottom-[-3rem] last:before:bottom-0 before:w-px before:bg-border">
+                        <div key={ev._id || idx} className="relative pl-8 before:absolute before:left-0 before:top-4 before:bottom-[-3rem] last:before:bottom-0 before:w-px before:bg-border">
                           <div className={`absolute left-[-5px] top-1.5 h-3 w-3 rounded-full ring-4 ${dotClass}`} />
                           <div className="bg-card border border-border/60 p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group">
                             <div className="flex justify-between items-start mb-2">
-                              <p className="text-xs font-bold tracking-widest uppercase text-muted-foreground">{new Date(ev.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                              <p className="text-xs font-bold tracking-widest uppercase text-muted-foreground">{formattedDate}</p>
                               <span className={`inline-block px-3 py-1 text-[10px] uppercase tracking-widest border rounded-md shadow-sm ${colorClass}`}>
-                                {ev.severity || 'Unrated'}
+                                {ev.severityLevel || ev.severity || 'Unrated'}
                               </span>
                             </div>
                             <p className="text-sm text-foreground font-medium leading-relaxed group-hover:text-primary transition-colors">{ev.description}</p>
