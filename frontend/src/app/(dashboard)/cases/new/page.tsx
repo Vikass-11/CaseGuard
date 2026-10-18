@@ -31,9 +31,9 @@ export default function NewCasePage() {
         incidentTypes: ['General'] // Simplified for now
       });
 
-      // 3. Add Statement
+      // 3. Add Statement (sent as originalText to undergo PII redaction)
       await api.put(`/cases/${caseId}/statement`, {
-        anonymizedText: formData.statement
+        originalText: formData.statement
       });
 
       return caseId;
