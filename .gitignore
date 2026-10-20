@@ -28,9 +28,11 @@ CaseGuard_UI_Fixes/
 dist/
 coverage/
 
-# Test scripts
+# Test & Seed scripts
 backend/test-analyze.js
 backend/test-service.ts
 backend/test-openai.ts
 backend/uploads/
 backend/tests/
+*seed*.ts
+*seed*.js
