@@ -43,5 +43,14 @@ const PredictionSchema = new mongoose_1.Schema({
     triggers: [{ type: String }],
     requiresHumanReview: { type: Boolean, default: false },
     patternEvidence: { type: mongoose_1.Schema.Types.Mixed },
+    detailedAnalysis: { type: String },
+    overrides: [{
+            field: { type: String, required: true },
+            originalValue: { type: mongoose_1.Schema.Types.Mixed },
+            newValue: { type: mongoose_1.Schema.Types.Mixed },
+            reason: { type: String, required: true },
+            actorId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+            timestamp: { type: Date, default: Date.now }
+        }],
 }, { timestamps: true });
 exports.default = mongoose_1.default.models.Prediction || mongoose_1.default.model('Prediction', PredictionSchema);
