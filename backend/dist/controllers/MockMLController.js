@@ -1,50 +1,21 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateRecommendations = exports.generateBrief = exports.analyzeCase = void 0;
-const MockMLService_1 = require("../services/MockMLService");
-const AuditLog_1 = __importDefault(require("../models/AuditLog"));
-const RealMLService_1 = require("../services/RealMLService");
-const analyzeCase = async (req, res, next) => {
-    try {
-        const id = req.params.id;
-        const orgId = req.user.organizationId;
-        const useMockML = process.env.USE_MOCK_ML === 'true';
-        const prediction = useMockML
-            ? await MockMLService_1.MockMLService.generatePrediction(id)
-            : await RealMLService_1.RealMLService.generatePrediction(id, orgId);
-        await AuditLog_1.default.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
-        res.json(prediction);
-    }
-    catch (error) {
-        next(error);
-    }
-};
-exports.analyzeCase = analyzeCase;
-const generateBrief = async (req, res, next) => {
-    try {
-        const id = req.params.id;
-        const brief = await MockMLService_1.MockMLService.generateBrief(id);
-        await AuditLog_1.default.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
-        res.json(brief);
-    }
-    catch (error) {
-        next(error);
-    }
-};
-exports.generateBrief = generateBrief;
-const generateRecommendations = async (req, res, next) => {
-    try {
-        const id = req.params.id;
-        const prediction = await MockMLService_1.MockMLService.generatePrediction(id);
-        const recommendations = await MockMLService_1.MockMLService.generateRecommendations(id, prediction.severity);
-        await AuditLog_1.default.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
-        res.json(recommendations);
-    }
-    catch (error) {
-        next(error);
-    }
-};
-exports.generateRecommendations = generateRecommendations;
+/**
+ * Legacy re-export for backwards compatibility.
+ * Primary logic has been relocated to AIAnalysisController.
+ */
+__exportStar(require("./AIAnalysisController"), exports);
