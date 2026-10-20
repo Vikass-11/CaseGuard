@@ -15,4 +15,5 @@ router.post('/users', AdminController_1.createUser);
 router.put('/users/:id/role', AdminController_1.updateUserRole);
 router.delete('/users/:id', AdminController_1.deleteUser);
 router.get('/audit-logs', AdminController_1.getAuditLogs);
+router.get('/evals/metrics', AdminController_1.getEvalMetrics);
 exports.default = router;
