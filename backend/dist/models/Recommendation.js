@@ -40,5 +40,13 @@ const RecommendationSchema = new mongoose_1.Schema({
     evidenceChecklist: [{ type: String }],
     followUpQuestions: [{ type: String }],
     referrals: [{ type: String }],
+    overrides: [{
+            field: { type: String, required: true },
+            originalValue: { type: mongoose_1.Schema.Types.Mixed },
+            newValue: { type: mongoose_1.Schema.Types.Mixed },
+            reason: { type: String, required: true },
+            actorId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+            timestamp: { type: Date, default: Date.now }
+        }],
 }, { timestamps: true });
 exports.default = mongoose_1.default.models.Recommendation || mongoose_1.default.model('Recommendation', RecommendationSchema);
