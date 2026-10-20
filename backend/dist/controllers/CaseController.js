@@ -1,9 +1,42 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addTimelineEvent = exports.updateCaseStatement = exports.updateCaseInput = exports.getCaseById = exports.getCases = exports.createCase = void 0;
+exports.uploadDocument = exports.addTimelineEvent = exports.updateCaseStatement = exports.updateCaseInput = exports.getCaseById = exports.getCases = exports.createCase = void 0;
 const Case_1 = __importDefault(require("../models/Case"));
 const CaseInput_1 = __importDefault(require("../models/CaseInput"));
 const CaseStatement_1 = __importDefault(require("../models/CaseStatement"));
@@ -41,6 +74,7 @@ const getCases = async (req, res, next) => {
     }
 };
 exports.getCases = getCases;
+const piiFallback_1 = require("../utils/piiFallback");
 const getCaseById = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -51,8 +85,14 @@ const getCaseById = async (req, res, next) => {
         }
         const inputs = await CaseInput_1.default.findOne({ caseId: id });
         const statement = await CaseStatement_1.default.findOne({ caseId: id });
-        const timeline = await TimelineEvent_1.default.find({ caseId: id, organizationId: req.user.organizationId }).sort({ date: 1 });
-        res.json({ case: caseDoc, inputs, statement, timeline });
+        const timeline = await TimelineEvent_1.default.find({ caseId: id, organizationId: req.user.organizationId }).sort({ eventDate: 1 });
+        const CaseDocument = (await Promise.resolve().then(() => __importStar(require('../models/CaseDocument')))).default;
+        const documents = await CaseDocument.find({ caseId: id }).select('-textContent'); // Exclude full text to save bandwidth
+        const PredictionModel = (await Promise.resolve().then(() => __importStar(require('../models/Prediction')))).default;
+        const RecommendationModel = (await Promise.resolve().then(() => __importStar(require('../models/Recommendation')))).default;
+        const prediction = await PredictionModel.findOne({ caseId: id });
+        const recommendation = await RecommendationModel.findOne({ caseId: id });
+        res.json({ case: caseDoc, inputs, statement, timeline, documents, prediction, recommendation });
     }
     catch (error) {
         next(error);
@@ -74,7 +114,34 @@ exports.updateCaseInput = updateCaseInput;
 const updateCaseStatement = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const statement = await CaseStatement_1.default.findOneAndUpdate({ caseId: id }, { ...req.body, caseId: id }, { new: true, upsert: true });
+        const PII_SERVICE_URL = process.env.PII_SERVICE_URL || 'http://localhost:5001';
+        const textToAnonymize = req.body.originalText || req.body.statement || req.body.text;
+        let anonymizedText = req.body.anonymizedText;
+        if (textToAnonymize) {
+            try {
+                const piiResponse = await fetch(`${PII_SERVICE_URL}/anonymize`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: textToAnonymize, caseId: id })
+                });
+                if (piiResponse.ok) {
+                    const piiData = await piiResponse.json();
+                    anonymizedText = piiData.anonymizedText;
+                }
+                else {
+                    console.warn(`PII service returned HTTP ${piiResponse.status}. Utilizing local safety redaction.`);
+                    anonymizedText = (0, piiFallback_1.redactPiiFallback)(textToAnonymize);
+                }
+            }
+            catch (err) {
+                console.warn('PII microservice unreachable. Falling back to local safety redaction.', err);
+                anonymizedText = (0, piiFallback_1.redactPiiFallback)(textToAnonymize);
+            }
+        }
+        else if (!anonymizedText) {
+            anonymizedText = 'No statement recorded.';
+        }
+        const statement = await CaseStatement_1.default.findOneAndUpdate({ caseId: id }, { anonymizedText, caseId: id }, { new: true, upsert: true });
         await AuditLog_1.default.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'UPDATE', collectionName: 'CaseStatement', documentId: statement._id });
         res.json(statement);
     }
@@ -86,7 +153,16 @@ exports.updateCaseStatement = updateCaseStatement;
 const addTimelineEvent = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const event = await TimelineEvent_1.default.create({ ...req.body, caseId: id, organizationId: req.user.organizationId });
+        const eventDate = req.body.eventDate || req.body.date || new Date();
+        const severityLevel = req.body.severityLevel || req.body.severity || 'Moderate';
+        const description = req.body.description || '';
+        const event = await TimelineEvent_1.default.create({
+            caseId: id,
+            organizationId: req.user.organizationId,
+            eventDate,
+            severityLevel,
+            description
+        });
         await AuditLog_1.default.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'CREATE', collectionName: 'TimelineEvent', documentId: event._id });
         res.status(201).json(event);
     }
@@ -95,3 +171,53 @@ const addTimelineEvent = async (req, res, next) => {
     }
 };
 exports.addTimelineEvent = addTimelineEvent;
+const uploadDocument = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file provided' });
+        }
+        const fileText = req.file.buffer.toString('utf-8');
+        // 1. Save locally in MongoDB (Metadata + Text)
+        const CaseDocument = (await Promise.resolve().then(() => __importStar(require('../models/CaseDocument')))).default;
+        const doc = await CaseDocument.create({
+            caseId: id,
+            organizationId: req.user.organizationId,
+            uploadedBy: req.user._id,
+            fileName: req.file.originalname,
+            fileType: req.file.mimetype,
+            textContent: fileText
+        });
+        // 2. Forward to Knowledge Service for Embedding
+        const KNOWLEDGE_SERVICE_URL = process.env.KNOWLEDGE_SERVICE_URL || 'http://localhost:5002';
+        try {
+            const ingestResponse = await fetch(`${KNOWLEDGE_SERVICE_URL}/api/ingest/case-document`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    caseId: id,
+                    sourceDocId: doc._id.toString(),
+                    text: fileText
+                })
+            });
+            if (!ingestResponse.ok) {
+                console.error('Failed to ingest document into vector DB', ingestResponse.status);
+            }
+        }
+        catch (err) {
+            console.error('Knowledge service unreachable:', err);
+        }
+        await AuditLog_1.default.create({
+            organizationId: req.user.organizationId,
+            actorId: req.user._id,
+            action: 'CREATE',
+            collectionName: 'CaseDocument',
+            documentId: doc._id
+        });
+        res.status(201).json(doc);
+    }
+    catch (error) {
+        next(error);
+    }
+};
+exports.uploadDocument = uploadDocument;
