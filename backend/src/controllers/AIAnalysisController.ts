@@ -24,11 +24,12 @@ export const generateBrief = async (req: Request, res: Response, next: NextFunct
     try {
         const id = req.params.id as string;
         const orgId = (req as any).user?.organizationId;
+        const userId = (req as any).user?._id;
         const useMockML = process.env.USE_MOCK_ML === 'true';
         
         const brief = useMockML
-            ? await MockMLService.generateBrief(id)
-            : await RealMLService.generateBrief(id, orgId);
+            ? await MockMLService.generateBrief(id, orgId, userId)
+            : await RealMLService.generateBrief(id, orgId, userId);
             
         await AuditLog.create({ organizationId: orgId, actorId: (req as any).user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
         res.json(brief);
@@ -63,22 +64,32 @@ export const generateRecommendations = async (req: Request, res: Response, next:
 export const saveBrief = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const id = req.params.id as string;
-        const { content } = req.body;
+        const userId = (req as any).user?._id;
+        const orgId = (req as any).user?.organizationId;
+        const { content, summary, chronology, abuseIndicators, riskLevel, missingInfo, researchCitations } = req.body;
         
-        // Find existing brief and update the content
         const BriefModel = (await import('../models/Brief')).default;
         
+        // Build update object with all provided fields
+        const updateData: any = {};
+        if (content !== undefined) updateData.content = content;
+        if (summary !== undefined) updateData.summary = summary;
+        if (chronology !== undefined) updateData.chronology = chronology;
+        if (abuseIndicators !== undefined) updateData.abuseIndicators = abuseIndicators;
+        if (riskLevel !== undefined) updateData.riskLevel = riskLevel;
+        if (missingInfo !== undefined) updateData.missingInfo = missingInfo;
+        if (researchCitations !== undefined) updateData.researchCitations = researchCitations;
+        if (orgId) updateData.organizationId = orgId;
+        if (userId) updateData.lastSavedBy = userId;
+        
+        // Use upsert to create the brief if it doesn't exist
         const brief = await BriefModel.findOneAndUpdate(
             { caseId: id },
-            { content },
-            { new: true }
+            { ...updateData, caseId: id },
+            { new: true, upsert: true }
         );
         
-        if (!brief) {
-            return res.status(404).json({ message: 'Brief not found' });
-        }
-        
-        await AuditLog.create({ organizationId: (req as any).user.organizationId, actorId: (req as any).user._id, action: 'UPDATE', collectionName: 'Brief', documentId: id });
+        await AuditLog.create({ organizationId: (req as any).user?.organizationId, actorId: (req as any).user?._id, action: 'UPDATE', collectionName: 'Brief', documentId: id });
         res.json(brief);
     } catch (error) {
         next(error);

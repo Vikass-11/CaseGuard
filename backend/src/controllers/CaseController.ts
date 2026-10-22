@@ -58,10 +58,12 @@ export const getCaseById = async (req: AuthRequest, res: Response, next: NextFun
 
     const PredictionModel = (await import('../models/Prediction')).default;
     const RecommendationModel = (await import('../models/Recommendation')).default;
+    const BriefModel = (await import('../models/Brief')).default;
     const prediction = await PredictionModel.findOne({ caseId: id });
     const recommendation = await RecommendationModel.findOne({ caseId: id });
+    const brief = await BriefModel.findOne({ caseId: id });
 
-    res.json({ case: caseDoc, inputs, statement, timeline, documents, prediction, recommendation });
+    res.json({ case: caseDoc, inputs, statement, timeline, documents, prediction, recommendation, brief });
   } catch (error) {
     next(error);
   }

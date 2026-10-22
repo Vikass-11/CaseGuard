@@ -23,7 +23,8 @@ import {
   ExternalLink,
   ChevronDown,
   Layers,
-  Scale
+  Scale,
+  ArrowRight
 } from 'lucide-react';
 import { CaseDetailSkeleton } from '@/components/ui/skeletons';
 import { OverrideDialog } from '@/components/ui/OverrideDialog';
@@ -188,7 +189,13 @@ export default function CaseAnalysisPage() {
             onClick={() => router.push(`/cases/${id}/brief`)}
             className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold tracking-wider uppercase bg-card hover:bg-muted text-foreground border border-border/80 rounded-xl transition-all shadow-sm"
           >
-            <FileText className="w-4 h-4 text-primary" /> Case Brief
+            <FileText className="w-4 h-4 text-primary" />
+            <span>{data.brief ? 'View Legal Brief' : 'Case Brief'}</span>
+            {data.brief && (
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                Saved
+              </span>
+            )}
           </button>
           <button
             onClick={() => window.print()}
@@ -563,6 +570,33 @@ export default function CaseAnalysisPage() {
               </div>
             )}
 
+          </div>
+
+          {/* Next Steps: Court Legal Brief Action Banner */}
+          <div className="bg-card rounded-2xl border border-border/80 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                <Scale className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">
+                  {data.brief ? 'Court Legal Brief & Memorandum Saved' : 'Synthesize Formal Court Brief from this Analysis'}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {data.brief
+                    ? 'Privileged attorney work-product saved to database. View, edit, or export to PDF.'
+                    : 'Transform these clinical lethality indicators, chronology, and statutory citations into an admissible petition memorandum.'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push(`/cases/${id}/brief`)}
+              className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm shrink-0"
+            >
+              <FileText className="w-4 h-4" />
+              <span>{data.brief ? 'Open Legal Studio' : 'Generate Court Brief'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
 
         </div>
