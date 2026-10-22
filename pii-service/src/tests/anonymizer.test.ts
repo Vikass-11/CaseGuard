@@ -2,6 +2,8 @@ import { anonymizeText } from '../services/anonymizer';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
+jest.setTimeout(60000);
+
 let mongoServer: MongoMemoryServer;
 
 beforeAll(async () => {
@@ -10,7 +12,7 @@ beforeAll(async () => {
   process.env.USE_MOCK_COMPREHEND = 'true';
   process.env.USE_MOCK_KMS = 'true';
   await mongoose.connect(uri);
-});
+}, 60000);
 
 afterAll(async () => {
   await mongoose.disconnect();
