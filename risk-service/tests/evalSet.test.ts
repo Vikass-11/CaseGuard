@@ -2,6 +2,10 @@ import request from 'supertest';
 import app from '../src/index';
 
 describe('Risk Assessment Agent - API Endpoint Tests', () => {
+  beforeAll(() => {
+    process.env.USE_MOCK_LLM = 'true';
+  });
+
   it('should return a valid RiskAssessment response for normal input', async () => {
     const res = await request(app)
       .post('/api/assess-risk')
