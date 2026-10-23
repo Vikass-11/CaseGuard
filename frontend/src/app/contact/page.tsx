@@ -13,7 +13,8 @@ import {
   Phone,
   Mail,
   MapPin,
-  Clock
+  Clock,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,10 +31,7 @@ export default function ContactPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-
-  const handleQuickExit = () => {
-    window.location.replace("https://www.google.com");
-  };
+  const [bannerVisible, setBannerVisible] = useState(true);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,19 +49,23 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#20212B]">
-      {/* Quick Exit Header */}
-      <div className="bg-[#534145] text-white px-4 py-2 text-xs font-semibold flex items-center justify-between">
-        <div className="flex items-center gap-2 max-w-4xl mx-auto">
-          <AlertTriangle className="w-3.5 h-3.5 text-[#FED7A5]" />
-          <span>If in immediate physical danger, dial <strong>911</strong> or call <strong>1-800-799-SAFE</strong>.</span>
+      {/* Safety Emergency Banner (Dismissible) */}
+      {bannerVisible && (
+        <div className="bg-[#534145] text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between transition-all duration-300">
+          <div className="flex items-center gap-2 max-w-4xl mx-auto text-center justify-center flex-1">
+            <AlertTriangle className="w-3.5 h-3.5 text-[#FED7A5] shrink-0" />
+            <span>If in immediate physical danger, dial <strong>911</strong> or call <strong>1-800-799-SAFE</strong>.</span>
+          </div>
+          <button
+            onClick={() => setBannerVisible(false)}
+            className="text-gray-300 hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors cursor-pointer shrink-0 ml-2"
+            title="Dismiss notification"
+            aria-label="Dismiss safety notification"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-        <button
-          onClick={handleQuickExit}
-          className="bg-[#9E6752] hover:bg-[#9E6752]/90 text-white px-3 py-1 rounded text-[11px] font-bold uppercase"
-        >
-          Quick Exit ✕
-        </button>
-      </div>
+      )}
 
       <header className="bg-[#20212B] border-b border-[#2D4354] py-5 px-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -76,12 +78,20 @@ export default function ContactPage() {
               <span className="block text-[10px] text-[#FED7A5] font-bold uppercase">Legal Defense Suite</span>
             </div>
           </Link>
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-xs font-bold text-gray-300 hover:text-[#FED7A5] transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" /> Back to Home
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/login"
+              className="text-xs font-bold text-gray-300 hover:text-[#FED7A5] transition-colors border border-[#73766A]/60 px-3 py-1.5 rounded-lg bg-[#2D4354]/40"
+            >
+              Login
+            </Link>
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-xs font-bold text-gray-300 hover:text-[#FED7A5] transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back to Home
+            </Link>
+          </div>
         </div>
       </header>
 
