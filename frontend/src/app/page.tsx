@@ -47,10 +47,7 @@ export default function PublicLawFirmHomePage() {
   const [submittingContact, setSubmittingContact] = useState(false);
   const [contactSubmitted, setContactSubmitted] = useState(false);
 
-  // Safety Quick Exit: instantly redirects to weather or search
-  const handleQuickExit = () => {
-    window.location.replace("https://www.google.com");
-  };
+  const [bannerVisible, setBannerVisible] = useState(true);
 
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,22 +66,25 @@ export default function PublicLawFirmHomePage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#20212B] font-sans selection:bg-[#FED7A5] selection:text-[#20212B]">
       
-      {/* Safety Emergency Banner (Topmost) */}
-      <div className="bg-[#534145] text-white px-4 py-2 text-xs font-semibold flex items-center justify-between z-50 relative">
-        <div className="flex items-center gap-2 max-w-4xl mx-auto text-center justify-center flex-1">
-          <AlertTriangle className="w-3.5 h-3.5 text-[#FED7A5] shrink-0" />
-          <span>
-            <strong>Safety Warning:</strong> If you are in immediate physical danger, call <strong>911</strong> or the 24/7 National DV Hotline at <strong>1-800-799-SAFE</strong>.
-          </span>
+      {/* Safety Emergency Banner (Topmost - Dismissible) */}
+      {bannerVisible && (
+        <div className="bg-[#534145] text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between z-50 relative transition-all duration-300">
+          <div className="flex items-center gap-2 max-w-4xl mx-auto text-center justify-center flex-1">
+            <AlertTriangle className="w-3.5 h-3.5 text-[#FED7A5] shrink-0" />
+            <span>
+              <strong>Safety Warning:</strong> If you are in immediate physical danger, call <strong>911</strong> or the 24/7 National DV Hotline at <strong>1-800-799-SAFE</strong>.
+            </span>
+          </div>
+          <button
+            onClick={() => setBannerVisible(false)}
+            className="text-gray-300 hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors cursor-pointer shrink-0 ml-2"
+            title="Dismiss notification"
+            aria-label="Dismiss safety notification"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-        <button
-          onClick={handleQuickExit}
-          className="bg-[#9E6752] hover:bg-[#9E6752]/90 text-white px-3 py-1 rounded text-[11px] font-bold uppercase tracking-wider shrink-0 transition-colors cursor-pointer shadow-sm ml-2"
-          title="Instantly leave this site for privacy"
-        >
-          Quick Exit ✕
-        </button>
-      </div>
+      )}
 
       {/* Main Navigation Bar (Matching Novara Wealth reference header) */}
       <header className="sticky top-0 z-40 bg-[#20212B]/95 backdrop-blur-md border-b border-[#2D4354] text-white">
@@ -126,7 +126,7 @@ export default function PublicLawFirmHomePage() {
               href="/login"
               className="border border-[#73766A]/60 hover:border-[#FED7A5] text-white hover:text-[#FED7A5] px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all bg-[#2D4354]/40"
             >
-              Lawyer / Staff Portal
+              Login
             </Link>
           </div>
 
@@ -160,9 +160,10 @@ export default function PublicLawFirmHomePage() {
               </a>
               <Link
                 href="/login"
+                onClick={() => setMobileNavOpen(false)}
                 className="w-full text-center border border-[#73766A] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-[#2D4354]/50"
               >
-                Attorney & Staff Login
+                Login
               </Link>
             </div>
           </div>
@@ -852,11 +853,11 @@ export default function PublicLawFirmHomePage() {
             </div>
 
             <div>
-              <p className="font-bold text-white uppercase tracking-wider mb-3 text-[11px]">Internal Access</p>
+              <p className="font-bold text-white uppercase tracking-wider mb-3 text-[11px]">Secure Access</p>
               <ul className="space-y-2">
-                <li><Link href="/login" className="hover:text-white">Lawyer Case Intake Portal</Link></li>
-                <li><Link href="/login" className="hover:text-white">Forensic Risk Analyzer</Link></li>
-                <li><Link href="/login" className="hover:text-white">Administrative Console</Link></li>
+                <li><Link href="/login" className="hover:text-white">Account Login</Link></li>
+                <li><Link href="/register" className="hover:text-white">Client Portal Registration</Link></li>
+                <li><a href="#contact" className="hover:text-white">Confidential Inquiry</a></li>
               </ul>
             </div>
 
