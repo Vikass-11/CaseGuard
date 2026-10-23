@@ -22,7 +22,8 @@ import {
   Clock,
   AlertCircle,
   CheckCircle2,
-  Bookmark
+  Bookmark,
+  FileDown
 } from 'lucide-react';
 import { BriefSkeleton } from '@/components/ui/skeletons';
 
@@ -131,6 +132,58 @@ export default function LawyerBriefPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const downloadWordDoc = () => {
+    if (!content) return;
+    const wordContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset='utf-8'>
+        <title>Legal Memorandum - ${caseTitle}</title>
+        <style>
+          body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; color: #000; margin: 1in; }
+          h1 { font-size: 16pt; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 6pt; }
+          h2 { font-size: 13pt; font-weight: bold; text-transform: uppercase; margin-top: 18pt; margin-bottom: 6pt; border-bottom: 1.5pt solid #000; padding-bottom: 3pt; }
+          h3 { font-size: 12pt; font-weight: bold; margin-top: 12pt; margin-bottom: 4pt; }
+          p { margin-bottom: 10pt; text-align: justify; text-indent: 0.5in; }
+          ul { margin-top: 4pt; margin-bottom: 10pt; }
+          li { margin-bottom: 4pt; }
+          .caption-box { border: 2pt solid #000; padding: 12pt; margin-bottom: 20pt; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="caption-box">
+          <p style="font-weight: bold; text-indent: 0; margin: 0; font-size: 11pt;">IN THE DISTRICT COURT OF THE JUDICIAL DISTRICT</p>
+          <p style="font-weight: bold; text-indent: 0; margin: 0; font-size: 11pt;">FAMILY LAW & PROTECTIVE RELIEF DIVISION</p>
+          <br>
+          <p style="text-indent: 0; margin: 0;"><strong>IN RE: ${caseTitle.toUpperCase()}</strong>, Petitioner</p>
+          <p style="text-indent: 0; margin: 0;">v. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>CASE NO: CG-${caseIdShort}</strong></p>
+          <p style="text-indent: 0; margin: 0;"><strong>ADVERSE PARTY</strong>, Respondent.</p>
+        </div>
+        ${content.split('\\n\\n').map(block => {
+          const t = block.trim();
+          if (t.startsWith('# ')) return `<h1>${t.replace('# ', '')}</h1>`;
+          if (t.startsWith('## ')) return `<h2>${t.replace('## ', '')}</h2>`;
+          if (t.startsWith('### ')) return `<h3>${t.replace('### ', '')}</h3>`;
+          if (t.startsWith('• ') || t.startsWith('- ')) {
+            return `<ul>${t.split('\\n').map(l => `<li>${l.replace(/^[•\\-]\\s*/, '')}</li>`).join('')}</ul>`;
+          }
+          return `<p>${t}</p>`;
+        }).join('')}
+      </body>
+      </html>
+    `;
+    const blob = new Blob([wordContent], { type: 'application/msword;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Legal_Memorandum_${caseTitle.replace(/[^a-zA-Z0-9]/g, '_')}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Editable Legal Memorandum (.doc) downloaded successfully!');
   };
 
   const handleContentChange = (newVal: string) => {
@@ -275,6 +328,16 @@ export default function LawyerBriefPage() {
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copied ? 'Copied' : 'Copy'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={downloadWordDoc}
+                className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-xl bg-[#2D4354] hover:bg-[#20212B] text-white transition-all shadow-sm"
+                title="Download editable legal brief in Word format"
+              >
+                <FileDown className="w-3.5 h-3.5 text-[#FED7A5]" />
+                <span>Download Word (.doc)</span>
               </button>
 
               <button
