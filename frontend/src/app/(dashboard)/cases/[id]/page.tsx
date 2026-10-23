@@ -165,8 +165,8 @@ export default function CaseDetailsPage() {
       {/* Main Tabs */}
       <div className="w-full">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="bg-transparent border-b border-border/60 w-full justify-start h-auto p-0 space-x-8 rounded-none mb-6">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground">
+          <TabsList className="bg-transparent border-b border-border/60 w-full justify-start h-auto p-0 space-x-4 sm:space-x-8 rounded-none mb-6 overflow-x-auto flex-nowrap scrollbar-none">
+            <TabsTrigger value="overview" className="shrink-0 data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground">
               Overview
             </TabsTrigger>
             <TabsTrigger value="brief" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-2 py-4 font-bold tracking-wide uppercase text-xs text-muted-foreground flex items-center gap-2">
