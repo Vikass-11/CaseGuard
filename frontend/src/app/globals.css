@@ -171,8 +171,8 @@
   header.sticky,
   nav,
   button,
-  .print\\:hidden,
   .no-print,
+  [class*="print:hidden"],
   .debug-info,
   [role="dialog"] {
     display: none !important;
