@@ -235,20 +235,20 @@ export function legalBlocksToWordHtml(blocks: LegalBlock[]): string {
     .map((block) => {
       switch (block.type) {
         case 'h1':
-          return `<h1 style="font-size: 15pt; font-weight: bold; text-align: left; text-transform: uppercase; margin-top: 16pt; margin-bottom: 8pt; border-bottom: 2pt solid #000; padding-bottom: 4pt;">${inlineMarkdownToHtml(block.content || '')}</h1>`;
+          return `<h1 style="font-size: 14pt; font-weight: bold; text-align: left; text-transform: uppercase; margin-top: 14pt; margin-bottom: 6pt; border-bottom: 2pt solid #000; padding-bottom: 3pt; page-break-after: avoid; mso-break-after: avoid;">${inlineMarkdownToHtml(block.content || '')}</h1>`;
         case 'h2':
-          return `<h2 style="font-size: 12.5pt; font-weight: bold; text-align: left; text-transform: uppercase; margin-top: 16pt; margin-bottom: 6pt; border-bottom: 1.5pt solid #000; padding-bottom: 3pt;">${inlineMarkdownToHtml(block.content || '')}</h2>`;
+          return `<h2 style="font-size: 12pt; font-weight: bold; text-align: left; text-transform: uppercase; margin-top: 14pt; margin-bottom: 5pt; border-bottom: 1.5pt solid #000; padding-bottom: 2pt; page-break-after: avoid; mso-break-after: avoid;">${inlineMarkdownToHtml(block.content || '')}</h2>`;
         case 'h3':
-          return `<h3 style="font-size: 11.5pt; font-weight: bold; text-align: left; margin-top: 10pt; margin-bottom: 4pt;">${inlineMarkdownToHtml(block.content || '')}</h3>`;
+          return `<h3 style="font-size: 11pt; font-weight: bold; text-align: left; margin-top: 10pt; margin-bottom: 3pt; page-break-after: avoid; mso-break-after: avoid;">${inlineMarkdownToHtml(block.content || '')}</h3>`;
         case 'ul':
-          return `<ul style="margin-top: 6pt; margin-bottom: 10pt; padding-left: 24pt; text-align: left;">${(block.items || []).map((item) => `<li style="margin-bottom: 5pt; line-height: 1.6;">${inlineMarkdownToHtml(item)}</li>`).join('')}</ul>`;
+          return `<ul style="margin-top: 4pt; margin-bottom: 8pt; padding-left: 20pt; text-align: left; page-break-inside: avoid;">${(block.items || []).map((item) => `<li style="margin-bottom: 3pt; line-height: 1.35; text-align: left;">${inlineMarkdownToHtml(item)}</li>`).join('')}</ul>`;
         case 'ol':
-          return `<ol style="margin-top: 6pt; margin-bottom: 10pt; padding-left: 24pt; text-align: left;">${(block.items || []).map((item) => `<li style="margin-bottom: 5pt; line-height: 1.6;">${inlineMarkdownToHtml(item)}</li>`).join('')}</ol>`;
+          return `<ol style="margin-top: 4pt; margin-bottom: 8pt; padding-left: 20pt; text-align: left; page-break-inside: avoid;">${(block.items || []).map((item) => `<li style="margin-bottom: 3pt; line-height: 1.35; text-align: left;">${inlineMarkdownToHtml(item)}</li>`).join('')}</ol>`;
         case 'quote':
-          return `<blockquote style="margin: 10pt 0; padding: 6pt 12pt; border-left: 3pt solid #000; font-style: italic; text-align: left;">${inlineMarkdownToHtml(block.content || '')}</blockquote>`;
+          return `<blockquote style="margin: 8pt 0; padding: 6pt 12pt; border-left: 3pt solid #000; font-style: italic; text-align: left; page-break-inside: avoid;">${inlineMarkdownToHtml(block.content || '')}</blockquote>`;
         case 'p':
         default:
-          return `<p style="margin-bottom: 10pt; line-height: 1.7; text-align: left;">${inlineMarkdownToHtml(block.content || '')}</p>`;
+          return `<p style="margin-top: 0; margin-bottom: 7pt; line-height: 1.35; text-align: left; text-indent: 0; mso-pagination: widow-orphan;">${inlineMarkdownToHtml(block.content || '')}</p>`;
       }
     })
     .join('\n');

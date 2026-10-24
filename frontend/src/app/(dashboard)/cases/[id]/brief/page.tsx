@@ -142,31 +142,122 @@ export default function LawyerBriefPage() {
   const downloadWordDoc = () => {
     if (!content) return;
     const wordContent = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <html xmlns:o='urn:schemas-microsoft-com:office:office'
+            xmlns:w='urn:schemas-microsoft-com:office:word'
+            xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
         <meta charset='utf-8'>
         <title>Legal Memorandum - ${caseTitle}</title>
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+          </w:WordDocument>
+        </xml>
+        <![endif]-->
         <style>
-          body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; color: #000; margin: 1in; }
-          h1 { font-size: 16pt; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 6pt; }
-          h2 { font-size: 13pt; font-weight: bold; text-transform: uppercase; margin-top: 18pt; margin-bottom: 6pt; border-bottom: 1.5pt solid #000; padding-bottom: 3pt; }
-          h3 { font-size: 12pt; font-weight: bold; margin-top: 12pt; margin-bottom: 4pt; }
-          p { margin-bottom: 10pt; text-align: justify; text-indent: 0.5in; }
-          ul { margin-top: 4pt; margin-bottom: 10pt; }
-          li { margin-bottom: 4pt; }
-          .caption-box { border: 2pt solid #000; padding: 12pt; margin-bottom: 20pt; text-align: center; }
+          @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in 1.0in 1.0in 1.0in;
+            mso-header-margin: 0.5in;
+            mso-footer-margin: 0.5in;
+            mso-paper-source: 0;
+          }
+          div.Section1 {
+            page: Section1;
+          }
+          body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11pt;
+            line-height: 1.35;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+          }
+          h1 {
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: left;
+            text-transform: uppercase;
+            margin-top: 14pt;
+            margin-bottom: 6pt;
+            page-break-after: avoid;
+            mso-break-after: avoid;
+          }
+          h2 {
+            font-size: 12pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 14pt;
+            margin-bottom: 5pt;
+            border-bottom: 1.5pt solid #000000;
+            padding-bottom: 2pt;
+            page-break-after: avoid;
+            mso-break-after: avoid;
+          }
+          h3 {
+            font-size: 11pt;
+            font-weight: bold;
+            margin-top: 10pt;
+            margin-bottom: 3pt;
+            page-break-after: avoid;
+            mso-break-after: avoid;
+          }
+          p {
+            margin-top: 0;
+            margin-bottom: 7pt;
+            text-align: left;
+            text-indent: 0;
+            line-height: 1.35;
+            mso-pagination: widow-orphan;
+          }
+          ul, ol {
+            margin-top: 3pt;
+            margin-bottom: 7pt;
+            padding-left: 20pt;
+            page-break-inside: avoid;
+          }
+          li {
+            margin-bottom: 3pt;
+            line-height: 1.35;
+            text-align: left;
+          }
+          .caption-box {
+            border: 1.5pt solid #000000;
+            padding: 10pt 14pt;
+            margin-bottom: 16pt;
+            page-break-inside: avoid;
+            mso-break-inside: avoid;
+          }
         </style>
       </head>
-      <body>
-        <div class="caption-box">
-          <p style="font-weight: bold; text-indent: 0; margin: 0; font-size: 11pt;">IN THE DISTRICT COURT OF THE JUDICIAL DISTRICT</p>
-          <p style="font-weight: bold; text-indent: 0; margin: 0; font-size: 11pt;">FAMILY LAW & PROTECTIVE RELIEF DIVISION</p>
-          <br>
-          <p style="text-indent: 0; margin: 0;"><strong>IN RE: ${caseTitle.toUpperCase()}</strong>, Petitioner</p>
-          <p style="text-indent: 0; margin: 0;">v. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>CASE NO: CG-${caseIdShort}</strong></p>
-          <p style="text-indent: 0; margin: 0;"><strong>ADVERSE PARTY</strong>, Respondent.</p>
+      <body lang="EN-US">
+        <div class="Section1">
+          <div class="caption-box">
+            <p style="font-weight: bold; text-align: center; margin-bottom: 4pt; font-size: 11pt;">
+              IN THE DISTRICT COURT OF THE JUDICIAL DISTRICT<br>
+              FAMILY LAW &amp; PROTECTIVE RELIEF DIVISION
+            </p>
+            <table style="width: 100%; border-top: 1pt solid #000; border-bottom: 1pt solid #000; margin-top: 6pt; margin-bottom: 6pt; border-collapse: collapse;">
+              <tr>
+                <td style="width: 55%; vertical-align: top; padding: 4pt 0;">
+                  <strong>IN RE: ${caseTitle.toUpperCase()}</strong><br>
+                  <span style="font-style: italic;">Petitioner / Protected Party</span><br><br>
+                  v.<br><br>
+                  <strong>ADVERSE PARTY</strong><br>
+                  <span style="font-style: italic;">Respondent.</span>
+                </td>
+                <td style="width: 45%; vertical-align: middle; border-left: 1pt solid #000; padding: 4pt 0 4pt 10pt;">
+                  <strong>CASE NO: CG-${caseIdShort}</strong><br><br>
+                  <strong>MEMORANDUM OF POINTS AND AUTHORITIES IN SUPPORT OF PETITION FOR EX-PARTE RESTRAINING ORDER</strong>
+                </td>
+              </tr>
+            </table>
+          </div>
+          ${legalBlocksToWordHtml(parseLegalDocumentBlocks(content))}
         </div>
-        ${legalBlocksToWordHtml(parseLegalDocumentBlocks(content))}
       </body>
       </html>
     `;
