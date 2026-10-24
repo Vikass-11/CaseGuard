@@ -90,9 +90,11 @@ const getCaseById = async (req, res, next) => {
         const documents = await CaseDocument.find({ caseId: id }).select('-textContent'); // Exclude full text to save bandwidth
         const PredictionModel = (await Promise.resolve().then(() => __importStar(require('../models/Prediction')))).default;
         const RecommendationModel = (await Promise.resolve().then(() => __importStar(require('../models/Recommendation')))).default;
+        const BriefModel = (await Promise.resolve().then(() => __importStar(require('../models/Brief')))).default;
         const prediction = await PredictionModel.findOne({ caseId: id });
         const recommendation = await RecommendationModel.findOne({ caseId: id });
-        res.json({ case: caseDoc, inputs, statement, timeline, documents, prediction, recommendation });
+        const brief = await BriefModel.findOne({ caseId: id });
+        res.json({ case: caseDoc, inputs, statement, timeline, documents, prediction, recommendation, brief });
     }
     catch (error) {
         next(error);
