@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { CaseDetailSkeleton } from '@/components/ui/skeletons';
 import { OverrideDialog } from '@/components/ui/OverrideDialog';
+import LegalMarkdownRenderer from '@/components/LegalMarkdownRenderer';
 
 const OverriddenBadge = ({ doc, field }: { doc: any; field: string }) => {
   const overridden = doc?.overrides?.some((o: any) => o.field === field);
@@ -558,13 +559,7 @@ export default function CaseAnalysisPage() {
                     />
                   </div>
                 ) : (
-                  <div className="prose prose-sm max-w-none text-foreground/90 font-medium text-sm leading-relaxed space-y-4 font-serif">
-                    {(editedAnalysis || prediction.detailedAnalysis).split('\n\n').map((paragraph: string, i: number) => (
-                      <p key={i} className="leading-relaxed">
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
+                  <LegalMarkdownRenderer content={editedAnalysis || prediction.detailedAnalysis || ''} />
                 )}
               </div>
             </div>

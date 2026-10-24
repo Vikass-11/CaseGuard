@@ -26,6 +26,11 @@ import {
   FileDown
 } from 'lucide-react';
 import { BriefSkeleton } from '@/components/ui/skeletons';
+import LegalMarkdownRenderer, {
+  normalizeLegalText,
+  parseLegalDocumentBlocks,
+  legalBlocksToWordHtml
+} from '@/components/LegalMarkdownRenderer';
 
 export default function LawyerBriefPage() {
   const router = useRouter();
@@ -53,7 +58,7 @@ export default function LawyerBriefPage() {
   // Once caseResponse loads, if a saved brief already exists, populate content
   useEffect(() => {
     if (existingBrief?.content && !hasUnsavedChanges) {
-      setContent(existingBrief.content);
+      setContent(normalizeLegalText(existingBrief.content));
       const savedDate = existingBrief.updatedAt || existingBrief.createdAt;
       if (savedDate) {
         setLastSavedAt(new Date(savedDate));
@@ -68,7 +73,7 @@ export default function LawyerBriefPage() {
       return res.data;
     },
     onSuccess: (data) => {
-      setContent(data.content);
+      setContent(normalizeLegalText(data.content));
       setHasUnsavedChanges(false);
       setLastSavedAt(new Date());
       // Update case query cache immediately so brief is persistent across all pages
@@ -161,16 +166,7 @@ export default function LawyerBriefPage() {
           <p style="text-indent: 0; margin: 0;">v. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>CASE NO: CG-${caseIdShort}</strong></p>
           <p style="text-indent: 0; margin: 0;"><strong>ADVERSE PARTY</strong>, Respondent.</p>
         </div>
-        ${content.split('\\n\\n').map(block => {
-          const t = block.trim();
-          if (t.startsWith('# ')) return `<h1>${t.replace('# ', '')}</h1>`;
-          if (t.startsWith('## ')) return `<h2>${t.replace('## ', '')}</h2>`;
-          if (t.startsWith('### ')) return `<h3>${t.replace('### ', '')}</h3>`;
-          if (t.startsWith('• ') || t.startsWith('- ')) {
-            return `<ul>${t.split('\\n').map(l => `<li>${l.replace(/^[•\\-]\\s*/, '')}</li>`).join('')}</ul>`;
-          }
-          return `<p>${t}</p>`;
-        }).join('')}
+        ${legalBlocksToWordHtml(parseLegalDocumentBlocks(content))}
       </body>
       </html>
     `;
@@ -457,50 +453,8 @@ export default function LawyerBriefPage() {
           {/* Document Body: Preview vs Editor */}
           <div className="p-8 sm:p-14">
             {activeView === 'preview' ? (
-              <div className="font-serif text-sm leading-relaxed text-foreground/90 print:text-black space-y-6 max-w-none">
-                {content.split('\n\n').map((block, idx) => {
-                  const trimmed = block.trim();
-                  if (!trimmed) return null;
-
-                  if (trimmed.startsWith('# ')) {
-                    return (
-                      <h1 key={idx} className="text-center text-lg font-bold uppercase tracking-wider border-b border-border/60 pb-3 mb-6 text-foreground print:text-black">
-                        {trimmed.replace('# ', '')}
-                      </h1>
-                    );
-                  }
-                  if (trimmed.startsWith('## ')) {
-                    return (
-                      <h2 key={idx} className="text-base font-bold uppercase tracking-wide text-foreground print:text-black mt-8 mb-3 flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary print:bg-black" />
-                        {trimmed.replace('## ', '')}
-                      </h2>
-                    );
-                  }
-                  if (trimmed.startsWith('### ')) {
-                    return (
-                      <h3 key={idx} className="text-sm font-bold text-foreground print:text-black mt-4 mb-2">
-                        {trimmed.replace('### ', '')}
-                      </h3>
-                    );
-                  }
-                  if (trimmed.startsWith('• ') || trimmed.startsWith('- ') || /^\d+\.\s/.test(trimmed)) {
-                    return (
-                      <ul key={idx} className="space-y-2 pl-6 list-disc text-foreground/90 print:text-black">
-                        {trimmed.split('\n').map((item, itemIdx) => (
-                          <li key={itemIdx} className="leading-relaxed">
-                            {item.replace(/^[•\-\d\.]\s*/, '')}
-                          </li>
-                        ))}
-                      </ul>
-                    );
-                  }
-                  return (
-                    <p key={idx} className="text-justify leading-relaxed indent-6">
-                      {trimmed}
-                    </p>
-                  );
-                })}
+              <div className="space-y-6 max-w-none">
+                <LegalMarkdownRenderer content={content} />
 
                 {/* Research Literature Grounding Callout (if available) */}
                 {researchCitations.length > 0 && (
