@@ -489,7 +489,7 @@ Provide your output strictly in JSON format containing the following fields:
       const riskLevel = data.riskLevel || prediction?.severity || 'High';
       const missingInfo = data.missingInfo || 'Subpoena 911 audio and obtain certified medical records.';
 
-      const content = data.content || `# LEGAL MEMORANDUM IN SUPPORT OF PETITION FOR PROTECTIVE ORDER
+      const rawContent = data.content || `# LEGAL MEMORANDUM IN SUPPORT OF PETITION FOR PROTECTIVE ORDER
 
 ## I. EXECUTIVE SUMMARY
 ${summary}
@@ -512,6 +512,12 @@ ${missingInfo}
 
 ## VII. PRAYER FOR RELIEF
 Petitioner respectfully requests that this Court issue an immediate Ex-Parte Temporary Restraining Order granting exclusive use of residence, stay-away orders (500 yards), temporary custody, and firearm surrender orders.`;
+
+      const content = rawContent
+        .replace(/\\r/g, '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .trim();
 
       return await Brief.findOneAndUpdate(
         { caseId },

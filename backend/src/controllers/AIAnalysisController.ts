@@ -72,7 +72,11 @@ export const saveBrief = async (req: Request, res: Response, next: NextFunction)
         
         // Build update object with all provided fields
         const updateData: any = {};
-        if (content !== undefined) updateData.content = content;
+        if (content !== undefined) {
+          updateData.content = typeof content === 'string'
+            ? content.replace(/\\r/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+            : content;
+        }
         if (summary !== undefined) updateData.summary = summary;
         if (chronology !== undefined) updateData.chronology = chronology;
         if (abuseIndicators !== undefined) updateData.abuseIndicators = abuseIndicators;

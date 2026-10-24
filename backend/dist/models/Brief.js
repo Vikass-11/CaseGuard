@@ -36,6 +36,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
 const BriefSchema = new mongoose_1.Schema({
     caseId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Case', required: true },
+    organizationId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Organization' },
+    generatedBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' },
+    lastSavedBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' },
+    researchCitations: { type: [String], default: [] },
     summary: { type: String, required: true },
     chronology: { type: String, required: true },
     abuseIndicators: { type: String, required: true },
