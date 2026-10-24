@@ -165,85 +165,174 @@ export default function CaseAnalysisPage() {
     const checklistItems = recommendation?.evidenceChecklist?.map((e: string) => `<tr><td style="width:24px;">&#9633;</td><td>${e}</td></tr>`).join('') || '';
 
     const wordContent = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <html xmlns:o='urn:schemas-microsoft-com:office:office'
+            xmlns:w='urn:schemas-microsoft-com:office:word'
+            xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
         <meta charset='utf-8'>
         <title>Forensic Case Analysis - ${caseTitle}</title>
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+          </w:WordDocument>
+        </xml>
+        <![endif]-->
         <style>
-          body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; color: #000; margin: 1in; }
-          h1 { font-size: 16pt; font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 4px; }
-          h2 { font-size: 13pt; font-weight: bold; text-transform: uppercase; border-bottom: 1.5pt solid #000; padding-bottom: 3px; margin-top: 18pt; margin-bottom: 8pt; }
-          .header-box { border: 2pt solid #000; padding: 12pt; margin-bottom: 18pt; background-color: #fcfcfc; }
-          .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 12pt; }
-          .meta-table td { padding: 4pt 6pt; border: 1pt solid #ddd; font-size: 11pt; }
-          .meta-label { font-weight: bold; width: 28%; background-color: #f2f2f2; }
-          p { margin-bottom: 10pt; text-align: justify; text-indent: 0.5in; }
-          ul { margin-top: 4pt; margin-bottom: 10pt; }
-          li { margin-bottom: 4pt; }
-          .sig-box { margin-top: 30pt; width: 60%; }
+          @page Section1 {
+            size: 8.5in 11.0in;
+            margin: 1.0in 1.0in 1.0in 1.0in;
+            mso-header-margin: 0.5in;
+            mso-footer-margin: 0.5in;
+            mso-paper-source: 0;
+          }
+          div.Section1 {
+            page: Section1;
+          }
+          body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11pt;
+            line-height: 1.35;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+          }
+          h1 {
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+            margin-bottom: 4pt;
+            page-break-after: avoid;
+            mso-break-after: avoid;
+          }
+          h2 {
+            font-size: 12pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 1.5pt solid #000000;
+            padding-bottom: 2pt;
+            margin-top: 14pt;
+            margin-bottom: 5pt;
+            page-break-after: avoid;
+            mso-break-after: avoid;
+          }
+          .header-box {
+            border: 1.5pt solid #000000;
+            padding: 10pt;
+            margin-bottom: 12pt;
+            background-color: #fcfcfc;
+            page-break-inside: avoid;
+            mso-break-inside: avoid;
+          }
+          .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12pt;
+            page-break-inside: avoid;
+            mso-break-inside: avoid;
+          }
+          .meta-table td {
+            padding: 4pt 6pt;
+            border: 1pt solid #bbb;
+            font-size: 10.5pt;
+          }
+          .meta-label {
+            font-weight: bold;
+            width: 30%;
+            background-color: #f2f2f2;
+          }
+          p {
+            margin-top: 0;
+            margin-bottom: 7pt;
+            text-align: left;
+            text-indent: 0;
+            line-height: 1.35;
+            mso-pagination: widow-orphan;
+          }
+          ul, ol {
+            margin-top: 3pt;
+            margin-bottom: 7pt;
+            padding-left: 20pt;
+            page-break-inside: avoid;
+          }
+          li {
+            margin-bottom: 3pt;
+            line-height: 1.35;
+            text-align: left;
+          }
+          .sig-box {
+            margin-top: 20pt;
+            page-break-inside: avoid;
+            mso-break-inside: avoid;
+          }
         </style>
       </head>
-      <body>
-        <div class="header-box">
-          <h1>CONFIDENTIAL ATTORNEY WORK PRODUCT</h1>
-          <p style="text-align: center; font-size: 10pt; text-indent: 0; margin-bottom: 0;">
-            PRIVILEGED CLINICAL LETHALITY EVALUATION & FORENSIC RISK MEMORANDUM<br>
-            PREPARED FOR EX-PARTE RESTRAINING ORDER & PROTECTIVE PROCEEDINGS
+      <body lang="EN-US">
+        <div class="Section1">
+          <div class="header-box">
+            <h1>CONFIDENTIAL ATTORNEY WORK PRODUCT</h1>
+            <p style="text-align: center; font-size: 10pt; text-indent: 0; margin-bottom: 0;">
+              PRIVILEGED CLINICAL LETHALITY EVALUATION &amp; FORENSIC RISK MEMORANDUM<br>
+              PREPARED FOR EX-PARTE RESTRAINING ORDER &amp; PROTECTIVE PROCEEDINGS
+            </p>
+          </div>
+
+          <table class="meta-table">
+            <tr>
+              <td class="meta-label">CASE TITLE / MATTER:</td>
+              <td><strong>${caseTitle}</strong></td>
+            </tr>
+            <tr>
+              <td class="meta-label">CASE REFERENCE ID:</td>
+              <td>${caseIdRef}</td>
+            </tr>
+            <tr>
+              <td class="meta-label">ASSESSED RISK SEVERITY:</td>
+              <td><strong>${prediction.severity.toUpperCase()}</strong> (Campbell Danger Assessment Protocol)</td>
+            </tr>
+            <tr>
+              <td class="meta-label">ESCALATION VELOCITY SCORE:</td>
+              <td><strong>${prediction.escalationScore} / 100</strong> (${prediction.escalationLevel || 'High'} Escalation)</td>
+            </tr>
+            <tr>
+              <td class="meta-label">PROCEDURAL URGENCY:</td>
+              <td>${recommendation?.urgency || 'Immediate Emergency Injunction (Ex-Parte)'}</td>
+            </tr>
+            <tr>
+              <td class="meta-label">DATE EVALUATED:</td>
+              <td>${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+            </tr>
+          </table>
+
+          <h2>I. CLINICAL &amp; FORENSIC NARRATIVE MEMORANDUM</h2>
+          ${narrativeText.split('\n\n').map((p: string) => `<p>${p.trim()}</p>`).join('')}
+
+          <h2>II. IDENTIFIED ABUSE TYPOLOGIES &amp; LETHALITY MARKERS</h2>
+          <ul>${patternsList}</ul>
+
+          <h2>III. STATUTORY &amp; CLINICAL DANGER TRIGGERS</h2>
+          <ul>${triggersList}</ul>
+
+          <h2>IV. EVIDENCE SUBPOENA &amp; DISCOVERY CHECKLIST</h2>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 4pt; page-break-inside: avoid;">
+            ${checklistItems}
+          </table>
+
+          <h2>V. CERTIFICATION OF COUNSEL</h2>
+          <p style="text-indent: 0; text-align: left;">
+            I hereby certify that I have conducted an independent attorney review of the factual findings and evidentiary data set forth in this forensic analysis, and the relief requested herein is necessary to prevent imminent severe harm.
           </p>
-        </div>
 
-        <table class="meta-table">
-          <tr>
-            <td class="meta-label">CASE TITLE / MATTER:</td>
-            <td><strong>${caseTitle}</strong></td>
-          </tr>
-          <tr>
-            <td class="meta-label">CASE REFERENCE ID:</td>
-            <td>${caseIdRef}</td>
-          </tr>
-          <tr>
-            <td class="meta-label">ASSESSED RISK SEVERITY:</td>
-            <td><strong>${prediction.severity.toUpperCase()}</strong> (Campbell Danger Assessment Protocol)</td>
-          </tr>
-          <tr>
-            <td class="meta-label">ESCALATION VELOCITY SCORE:</td>
-            <td><strong>${prediction.escalationScore} / 100</strong> (${prediction.escalationLevel || 'High'} Escalation)</td>
-          </tr>
-          <tr>
-            <td class="meta-label">PROCEDURAL URGENCY:</td>
-            <td>${recommendation?.urgency || 'Immediate Emergency Injunction (Ex-Parte)'}</td>
-          </tr>
-          <tr>
-            <td class="meta-label">DATE EVALUATED:</td>
-            <td>${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
-          </tr>
-        </table>
-
-        <h2>I. CLINICAL & FORENSIC NARRATIVE MEMORANDUM</h2>
-        ${narrativeText.split('\n\n').map((p: string) => `<p>${p}</p>`).join('')}
-
-        <h2>II. IDENTIFIED ABUSE TYPOLOGIES & LETHALITY MARKERS</h2>
-        <ul>${patternsList}</ul>
-
-        <h2>III. STATUTORY & CLINICAL DANGER TRIGGERS</h2>
-        <ul>${triggersList}</ul>
-
-        <h2>IV. EVIDENCE SUBPOENA & DISCOVERY CHECKLIST</h2>
-        <table style="width: 100%; border-collapse: collapse; margin-top: 6pt;">
-          ${checklistItems}
-        </table>
-
-        <h2>V. CERTIFICATION OF COUNSEL</h2>
-        <p style="text-indent: 0;">
-          I hereby certify that I have conducted an independent attorney review of the factual findings and evidentiary data set forth in this forensic analysis, and the relief requested herein is necessary to prevent imminent severe harm.
-        </p>
-
-        <div class="sig-box">
-          <br><br>
-          __________________________________________________<br>
-          <strong>ATTORNEY OF RECORD</strong><br>
-          State Bar Number: ________________________<br>
-          Date: ________________________
+          <div class="sig-box">
+            <br>
+            __________________________________________________<br>
+            <strong>ATTORNEY OF RECORD</strong><br>
+            State Bar Number: ________________________<br>
+            Date: ________________________
+          </div>
         </div>
       </body>
       </html>
