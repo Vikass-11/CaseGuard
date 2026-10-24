@@ -27,6 +27,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import { CaseDetailSkeleton } from '@/components/ui/skeletons';
+import LegalMarkdownRenderer from '@/components/LegalMarkdownRenderer';
 
 export default function CaseDetailsPage() {
   const router = useRouter();
@@ -340,23 +341,15 @@ export default function CaseDetailsPage() {
                     </div>
 
                     {/* Legal Document Render */}
-                    <div className="p-8 rounded-2xl border border-border/80 bg-background font-serif text-sm leading-relaxed text-foreground/90 space-y-4 max-h-[500px] overflow-y-auto">
-                      {data.brief.content.split('\n\n').slice(0, 10).map((block: string, bIdx: number) => {
-                        const trimmed = block.trim();
-                        if (trimmed.startsWith('# ')) {
-                          return <h2 key={bIdx} className="text-base font-bold uppercase tracking-wider text-foreground border-b border-border/60 pb-2">{trimmed.replace('# ', '')}</h2>;
-                        }
-                        if (trimmed.startsWith('## ')) {
-                          return <h3 key={bIdx} className="text-sm font-bold uppercase tracking-wide text-foreground mt-4 mb-1">{trimmed.replace('## ', '')}</h3>;
-                        }
-                        return <p key={bIdx} className="text-justify leading-relaxed indent-4">{trimmed}</p>;
-                      })}
-                      <div className="text-center pt-4">
+                    <div className="p-6 sm:p-8 rounded-2xl border border-border/80 bg-background max-h-[550px] overflow-y-auto shadow-inner">
+                      <LegalMarkdownRenderer content={data.brief.content} />
+                      <div className="text-center pt-6 border-t border-border/60 mt-6">
                         <button
                           onClick={() => router.push(`/cases/${id}/brief`)}
-                          className="text-xs font-bold uppercase tracking-wider text-primary hover:underline"
+                          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary hover:underline group"
                         >
-                          View complete memorandum & edit in Studio →
+                          <span>Open Full Legal Brief Studio & Print PDF</span>
+                          <span className="transition-transform group-hover:translate-x-1">→</span>
                         </button>
                       </div>
                     </div>
