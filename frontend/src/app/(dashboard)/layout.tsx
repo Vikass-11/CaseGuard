@@ -119,7 +119,7 @@ export default function DashboardLayout({
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden bg-background print:h-auto print:overflow-visible print:block print:bg-white">
       {/* Desktop Sidebar (hidden on mobile, hidden on print) */}
       <aside className="hidden lg:flex w-72 border-r border-border/80 bg-card flex-col shadow-sm relative z-40 print:hidden shrink-0">
         <div className="h-20 flex items-center px-6 border-b border-border/70 justify-between">
@@ -211,7 +211,7 @@ export default function DashboardLayout({
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto bg-background flex flex-col">
+      <main className="flex-1 overflow-y-auto bg-background flex flex-col print:h-auto print:overflow-visible print:block print:bg-white">
         {/* Sticky App Header */}
         <header className="h-16 sm:h-20 border-b border-border/70 bg-card/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-8 print:hidden shrink-0">
           <div className="flex items-center gap-3">
@@ -252,7 +252,7 @@ export default function DashboardLayout({
         </header>
 
         {/* Page Content Container (Responsive Padding) */}
-        <div className="flex-1 p-4 sm:p-6 lg:p-8">
+        <div className="flex-1 p-4 sm:p-6 lg:p-8 print:p-0 print:m-0 print:block">
           {children}
         </div>
       </main>
