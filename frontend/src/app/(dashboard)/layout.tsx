@@ -15,15 +15,19 @@ import {
   X,
   ExternalLink,
   ChevronRight,
-  Scale
+  Scale,
+  Settings,
+  HelpCircle,
+  Home
 } from "lucide-react";
 import { getCurrentUser, getStoredEmail, isAuthenticated, logout, UserRole } from "@/lib/auth";
 
 const NAV_ITEMS: { name: string; href: string; icon: any; roles: UserRole[] }[] = [
   { name: "Cases", href: "/dashboard", icon: FileText, roles: ["LAWYER", "CASE_WORKER", "ADMIN"] },
   { name: "New Intake", href: "/cases/new", icon: UserPlus, roles: ["LAWYER", "CASE_WORKER", "ADMIN"] },
-  { name: "Admin Dashboard", href: "/admin", icon: LayoutDashboard, roles: ["ADMIN"] },
   { name: "Practice Analyser", href: "/practice", icon: Brain, roles: ["LAWYER", "ADMIN"] },
+  { name: "Admin Dashboard", href: "/admin", icon: LayoutDashboard, roles: ["ADMIN"] },
+  { name: "Account Settings", href: "/settings", icon: Settings, roles: ["LAWYER", "CASE_WORKER", "ADMIN"] },
 ];
 
 export default function DashboardLayout({
@@ -56,6 +60,10 @@ export default function DashboardLayout({
     logout();
   };
 
+  const handleQuickExit = () => {
+    window.location.replace("https://www.weather.com");
+  };
+
   const initials = email ? email.slice(0, 2).toUpperCase() : "CG";
 
   const getPageTitle = () => {
@@ -66,6 +74,7 @@ export default function DashboardLayout({
     if (pathname.startsWith("/cases/")) return "Case Dossier";
     if (pathname.startsWith("/admin")) return "Administrative Portal";
     if (pathname.startsWith("/practice")) return "Practice Analyser";
+    if (pathname.startsWith("/settings")) return "Account Settings";
     return "Case Management";
   };
 
@@ -99,9 +108,9 @@ export default function DashboardLayout({
         );
       })}
 
-      <div className="pt-4 mt-4 border-t border-border/60">
+      <div className="pt-4 mt-4 border-t border-border/60 space-y-1">
         <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-2 px-3">
-          Public Facing
+          Public & Help
         </p>
         <Link
           href="/"
@@ -110,7 +119,18 @@ export default function DashboardLayout({
         >
           <div className="flex items-center space-x-2.5">
             <Scale className="h-4 w-4 text-[#9E6752]" />
-            <span>Firm Website & Contact</span>
+            <span>Firm Website</span>
+          </div>
+          <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+        </Link>
+        <Link
+          href="/faq"
+          target="_blank"
+          className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors"
+        >
+          <div className="flex items-center space-x-2.5">
+            <HelpCircle className="h-4 w-4 text-[#73766A]" />
+            <span>FAQ & Admissibility</span>
           </div>
           <ExternalLink className="h-3.5 w-3.5 opacity-60" />
         </Link>
@@ -119,8 +139,8 @@ export default function DashboardLayout({
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background print:h-auto print:overflow-visible print:block print:bg-white">
-      {/* Desktop Sidebar (hidden on mobile, hidden on print) */}
+    <div className="flex h-screen overflow-hidden bg-background print:h-auto print:overflow-visible print:block print:bg-white font-sans">
+      {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-72 border-r border-border/80 bg-card flex-col shadow-sm relative z-40 print:hidden shrink-0">
         <div className="h-20 flex items-center px-6 border-b border-border/70 justify-between">
           <Link href="/dashboard" className="flex items-center gap-3">
@@ -140,17 +160,20 @@ export default function DashboardLayout({
 
         {/* User Profile Bar */}
         <div className="p-4 border-t border-border/80 bg-muted/20">
-          <div className="flex items-center space-x-3 px-2 py-2 text-sm text-muted-foreground mb-3">
-            <div className="h-9 w-9 rounded-xl bg-[#2D4354] flex items-center justify-center font-bold text-[#FED7A5] text-xs shadow-sm">
+          <Link
+            href="/settings"
+            className="flex items-center space-x-3 px-2 py-2 rounded-xl text-sm text-muted-foreground mb-3 hover:bg-muted/60 transition-colors group cursor-pointer"
+          >
+            <div className="h-9 w-9 rounded-xl bg-[#2D4354] flex items-center justify-center font-bold text-[#FED7A5] text-xs shadow-sm group-hover:scale-105 transition-transform">
               {initials}
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="font-bold text-foreground text-xs truncate">{email || "Counselor"}</p>
+              <p className="font-bold text-foreground text-xs truncate group-hover:text-primary transition-colors">{email || "Counselor"}</p>
               <p className="text-[10px] font-bold tracking-widest uppercase text-[#9E6752] truncate">
                 {role ? role.replace('_', ' ') : 'ATTORNEY'}
               </p>
             </div>
-          </div>
+          </Link>
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center space-x-2 px-3 py-2 text-xs font-bold tracking-wider uppercase text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all cursor-pointer border border-border/60 hover:border-destructive/20"
@@ -161,7 +184,7 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* Mobile Slide-over Drawer Backdrop & Panel */}
+      {/* Mobile Slide-over Drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
@@ -233,25 +256,29 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/"
-              target="_blank"
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors border border-border/60"
+            {/* Quick Safety Exit Button */}
+            <button
+              onClick={handleQuickExit}
+              className="bg-[#9E6752] hover:bg-[#9E6752]/90 text-white px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+              title="Quickly exit this site to weather.com"
             >
-              <Scale className="w-3.5 h-3.5 text-[#9E6752]" />
-              <span>Public Showcase</span>
-              <ExternalLink className="w-3 h-3 opacity-60" />
-            </Link>
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Quick Exit</span>
+            </button>
 
-            <div className="flex items-center gap-2 pl-2 border-l border-border/60">
+            <Link
+              href="/settings"
+              className="flex items-center gap-2 pl-2 border-l border-border/60 hover:opacity-85 transition-opacity"
+              title="View Profile & Settings"
+            >
               <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-[#2D4354] flex items-center justify-center font-bold text-[#FED7A5] text-xs shadow-sm">
                 {initials}
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 
-        {/* Page Content Container (Responsive Padding) */}
+        {/* Page Content Container */}
         <div className="flex-1 p-4 sm:p-6 lg:p-8 print:p-0 print:m-0 print:block">
           {children}
         </div>
