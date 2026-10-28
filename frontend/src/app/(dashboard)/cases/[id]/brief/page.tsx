@@ -135,8 +135,23 @@ export default function LawyerBriefPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  useEffect(() => {
+    const handleBeforePrint = () => {
+      setActiveView('preview');
+    };
+    window.addEventListener('beforeprint', handleBeforePrint);
+    return () => window.removeEventListener('beforeprint', handleBeforePrint);
+  }, []);
+
   const handlePrint = () => {
-    window.print();
+    if (activeView !== 'preview') {
+      setActiveView('preview');
+      setTimeout(() => {
+        window.print();
+      }, 150);
+    } else {
+      window.print();
+    }
   };
 
   const downloadWordDoc = () => {
@@ -316,7 +331,7 @@ export default function LawyerBriefPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500 pb-20">
+    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500 pb-20 print:m-0 print:p-0 print:max-w-none print:w-full print:space-y-0 print:pb-0 print:animate-none print:block">
       
       {/* Top Action Bar (hidden on print) */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card p-5 rounded-2xl border border-border/80 shadow-sm print:hidden">
@@ -509,17 +524,17 @@ export default function LawyerBriefPage() {
 
       {/* Legal Document Container */}
       {content && (
-        <div className="bg-card rounded-3xl border border-border/80 overflow-hidden shadow-sm print:border-none print:shadow-none print:bg-white print:text-black">
+        <div className="bg-card rounded-3xl border border-border/80 overflow-hidden shadow-sm print:border-none print:shadow-none print:bg-white print:text-black print:overflow-visible print:h-auto print:max-h-none print:rounded-none print:m-0 print:p-0 print:w-full print:block">
           
           {/* Document Header Caption */}
-          <div className="p-8 sm:p-12 border-b border-border/60 bg-muted/10 print:bg-white print:border-b-2 print:border-black text-center space-y-4">
+          <div className="p-8 sm:p-12 border-b border-border/60 bg-muted/10 print:bg-white print:border-b-2 print:border-black text-center space-y-4 print:p-0 print:pt-0 print:pb-4 print:mb-4">
             <div className="flex items-center justify-center gap-2 text-xs font-bold tracking-widest uppercase text-muted-foreground print:text-black">
               <Scale className="w-4 h-4 text-primary print:text-black" />
               <span>Confidential Attorney Work Product • Privileged Legal Document</span>
             </div>
             
             {/* Formal Legal Caption Box */}
-            <div className="border border-border/80 print:border-black p-6 rounded-2xl bg-card print:bg-white max-w-2xl mx-auto text-left font-serif text-xs leading-relaxed space-y-3">
+            <div className="caption-box border border-border/80 print:border-black p-6 rounded-2xl bg-card print:bg-white max-w-2xl mx-auto text-left font-serif text-xs leading-relaxed space-y-3 print:max-w-none print:w-full print:rounded-none print:p-4 print:break-inside-avoid">
               <div className="text-center font-bold tracking-wider text-foreground print:text-black text-sm uppercase">
                 IN THE DISTRICT COURT OF THE JUDICIAL DISTRICT<br />
                 FAMILY LAW & PROTECTIVE RELIEF DIVISION
@@ -542,14 +557,14 @@ export default function LawyerBriefPage() {
           </div>
 
           {/* Document Body: Preview vs Editor */}
-          <div className="p-8 sm:p-14">
+          <div className="p-8 sm:p-14 print:p-0 print:m-0">
             {activeView === 'preview' ? (
-              <div className="space-y-6 max-w-none">
+              <div className="space-y-6 max-w-none print:space-y-4">
                 <LegalMarkdownRenderer content={content} />
 
                 {/* Research Literature Grounding Callout (if available) */}
                 {researchCitations.length > 0 && (
-                  <div className="mt-10 p-6 rounded-2xl bg-muted/20 border border-border/80 print:border-black space-y-3">
+                  <div className="citation-callout mt-10 p-6 rounded-2xl bg-muted/20 border border-border/80 print:border-black space-y-3 print:mt-6 print:rounded-none print:break-inside-avoid">
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary print:text-black">
                       <BookOpen className="w-4 h-4" />
                       <span>Clinical Research Literature & Evidence Benchmarks</span>
@@ -566,7 +581,7 @@ export default function LawyerBriefPage() {
                 )}
 
                 {/* Formal Signature Block */}
-                <div className="pt-12 mt-12 border-t border-border/60 print:border-black grid grid-cols-2 gap-8 text-xs font-serif">
+                <div className="signature-block pt-12 mt-12 border-t border-border/60 print:border-black grid grid-cols-2 gap-8 text-xs font-serif print:mt-8 print:pt-6 print:break-inside-avoid">
                   <div>
                     <p>Dated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                     <p className="mt-4 italic">CaseGuard Intelligence Dossier Ref: {id}</p>
