@@ -27,6 +27,7 @@ export default function PublicNavbar() {
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "About", href: "/about" },
+    { name: "AI Sandbox", href: "/sandbox" },
     { name: "FAQ", href: "/faq" },
     { name: "Contact & Crisis", href: "/contact" },
   ];
