@@ -1,18 +1,41 @@
 import { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import { MockMLService } from '../services/MockMLService';
 import AuditLog from '../models/AuditLog';
+import Case from '../models/Case';
 import { RealMLService } from '../services/RealMLService';
+
+// Ensure case belongs to the requesting user's organization
+async function verifyCaseOwnership(caseId: string, orgId: any): Promise<boolean> {
+    if (!caseId || !mongoose.Types.ObjectId.isValid(caseId)) return false;
+    const caseDoc = await Case.findOne({ _id: caseId, organizationId: orgId });
+    return !!caseDoc;
+}
 
 export const analyzeCase = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const id = req.params.id as string;
-        const orgId = (req as any).user.organizationId;
+        const orgId = (req as any).user?.organizationId;
+        
+        const hasAccess = await verifyCaseOwnership(id, orgId);
+        if (!hasAccess) {
+            return res.status(404).json({ message: 'Case not found or access denied.' });
+        }
+
         const useMockML = process.env.USE_MOCK_ML === 'true';
         const prediction = useMockML
             ? await MockMLService.generatePrediction(id)
             : await RealMLService.generatePrediction(id, orgId);
 
-        await AuditLog.create({ organizationId: (req as any).user.organizationId, actorId: (req as any).user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
+        await AuditLog.create({ 
+            organizationId: orgId, 
+            actorId: (req as any).user._id, 
+            action: 'UPDATE', 
+            collectionName: 'Case', 
+            documentId: id,
+            diff: { action: 'ANALYZE_CASE' }
+        });
+
         res.json(prediction);
     }
     catch (error) {
@@ -25,13 +48,26 @@ export const generateBrief = async (req: Request, res: Response, next: NextFunct
         const id = req.params.id as string;
         const orgId = (req as any).user?.organizationId;
         const userId = (req as any).user?._id;
-        const useMockML = process.env.USE_MOCK_ML === 'true';
         
+        const hasAccess = await verifyCaseOwnership(id, orgId);
+        if (!hasAccess) {
+            return res.status(404).json({ message: 'Case not found or access denied.' });
+        }
+
+        const useMockML = process.env.USE_MOCK_ML === 'true';
         const brief = useMockML
             ? await MockMLService.generateBrief(id, orgId, userId)
             : await RealMLService.generateBrief(id, orgId, userId);
             
-        await AuditLog.create({ organizationId: orgId, actorId: (req as any).user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
+        await AuditLog.create({ 
+            organizationId: orgId, 
+            actorId: userId, 
+            action: 'UPDATE', 
+            collectionName: 'Case', 
+            documentId: id,
+            diff: { action: 'GENERATE_BRIEF' }
+        });
+
         res.json(brief);
     }
     catch (error) {
@@ -43,8 +79,14 @@ export const generateRecommendations = async (req: Request, res: Response, next:
     try {
         const id = req.params.id as string;
         const orgId = (req as any).user?.organizationId;
-        const useMockML = process.env.USE_MOCK_ML === 'true';
+        const userId = (req as any).user?._id;
 
+        const hasAccess = await verifyCaseOwnership(id, orgId);
+        if (!hasAccess) {
+            return res.status(404).json({ message: 'Case not found or access denied.' });
+        }
+
+        const useMockML = process.env.USE_MOCK_ML === 'true';
         const prediction = useMockML
             ? await MockMLService.generatePrediction(id)
             : await RealMLService.generatePrediction(id, orgId);
@@ -53,7 +95,15 @@ export const generateRecommendations = async (req: Request, res: Response, next:
             ? await MockMLService.generateRecommendations(id, prediction.severity)
             : await RealMLService.generateRecommendations(id, prediction.severity, orgId);
 
-        await AuditLog.create({ organizationId: orgId, actorId: (req as any).user._id, action: 'UPDATE', collectionName: 'Case', documentId: id });
+        await AuditLog.create({ 
+            organizationId: orgId, 
+            actorId: userId, 
+            action: 'UPDATE', 
+            collectionName: 'Case', 
+            documentId: id,
+            diff: { action: 'GENERATE_RECOMMENDATIONS' }
+        });
+
         res.json(recommendations);
     }
     catch (error) {
@@ -66,8 +116,13 @@ export const saveBrief = async (req: Request, res: Response, next: NextFunction)
         const id = req.params.id as string;
         const userId = (req as any).user?._id;
         const orgId = (req as any).user?.organizationId;
-        const { content, summary, chronology, abuseIndicators, riskLevel, missingInfo, researchCitations } = req.body;
         
+        const hasAccess = await verifyCaseOwnership(id, orgId);
+        if (!hasAccess) {
+            return res.status(404).json({ message: 'Case not found or access denied.' });
+        }
+
+        const { content, summary, chronology, abuseIndicators, riskLevel, missingInfo, researchCitations } = req.body;
         const BriefModel = (await import('../models/Brief')).default;
         
         // Build update object with all provided fields
@@ -93,7 +148,15 @@ export const saveBrief = async (req: Request, res: Response, next: NextFunction)
             { new: true, upsert: true }
         );
         
-        await AuditLog.create({ organizationId: (req as any).user?.organizationId, actorId: (req as any).user?._id, action: 'UPDATE', collectionName: 'Brief', documentId: id });
+        await AuditLog.create({ 
+            organizationId: orgId, 
+            actorId: userId, 
+            action: 'UPDATE', 
+            collectionName: 'Brief', 
+            documentId: id,
+            diff: { action: 'SAVE_BRIEF' }
+        });
+
         res.json(brief);
     } catch (error) {
         next(error);
@@ -103,9 +166,15 @@ export const saveBrief = async (req: Request, res: Response, next: NextFunction)
 export const overridePrediction = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const id = req.params.id as string;
+        const orgId = (req as any).user?.organizationId;
+        const actorId = (req as any).user?._id;
+
+        const hasAccess = await verifyCaseOwnership(id, orgId);
+        if (!hasAccess) {
+            return res.status(404).json({ message: 'Case not found or access denied.' });
+        }
+
         const { field, newValue, reason } = req.body;
-        const actorId = (req as any).user._id;
-        
         const PredictionModel = (await import('../models/Prediction')).default;
         const prediction = await PredictionModel.findOne({ caseId: id });
         
@@ -119,7 +188,7 @@ export const overridePrediction = async (req: Request, res: Response, next: Next
             field,
             originalValue,
             newValue,
-            reason,
+            reason: reason || 'Professional discretion override',
             actorId,
             timestamp: new Date()
         };
@@ -131,12 +200,12 @@ export const overridePrediction = async (req: Request, res: Response, next: Next
         await prediction.save();
         
         await AuditLog.create({ 
-            organizationId: (req as any).user.organizationId, 
+            organizationId: orgId, 
             actorId, 
             action: 'UPDATE', 
             collectionName: 'Prediction', 
             documentId: prediction._id,
-            diff: { [field]: { before: originalValue, after: newValue } }
+            diff: { [field]: { before: originalValue, after: newValue, reason } }
         });
         
         res.json(prediction);
@@ -148,9 +217,15 @@ export const overridePrediction = async (req: Request, res: Response, next: Next
 export const overrideRecommendation = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const id = req.params.id as string;
+        const orgId = (req as any).user?.organizationId;
+        const actorId = (req as any).user?._id;
+
+        const hasAccess = await verifyCaseOwnership(id, orgId);
+        if (!hasAccess) {
+            return res.status(404).json({ message: 'Case not found or access denied.' });
+        }
+
         const { field, newValue, reason } = req.body;
-        const actorId = (req as any).user._id;
-        
         const RecommendationModel = (await import('../models/Recommendation')).default;
         const recommendation = await RecommendationModel.findOne({ caseId: id });
         
@@ -164,7 +239,7 @@ export const overrideRecommendation = async (req: Request, res: Response, next: 
             field,
             originalValue,
             newValue,
-            reason,
+            reason: reason || 'Professional discretion override',
             actorId,
             timestamp: new Date()
         };
@@ -176,12 +251,12 @@ export const overrideRecommendation = async (req: Request, res: Response, next: 
         await recommendation.save();
         
         await AuditLog.create({ 
-            organizationId: (req as any).user.organizationId, 
+            organizationId: orgId, 
             actorId, 
             action: 'UPDATE', 
             collectionName: 'Recommendation', 
             documentId: recommendation._id,
-            diff: { [field]: { before: originalValue, after: newValue } }
+            diff: { [field]: { before: originalValue, after: newValue, reason } }
         });
         
         res.json(recommendation);
