@@ -166,53 +166,121 @@
   =============================================================
 */
 @media print {
-  /* Hide non-printable app components */
+  /* 1. Disable animations, transforms and transitions that trigger viewport-sized compositor layers */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* 2. Unconstrain document root and viewport */
+  html,
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    line-height: 1.45 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 3. Strip scroll traps, flex restrictions and fixed viewport heights from all layout parents */
+  body > div,
+  #__next,
+  main,
+  [data-nextjs-scroll-focus-boundary],
+  div.h-screen,
+  div.overflow-hidden,
+  main.overflow-y-auto,
+  .overflow-hidden,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  [class*="overflow-hidden"],
+  [class*="overflow-y-auto"],
+  [class*="h-screen"],
+  [class*="max-h-"] {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    position: static !important;
+    display: block !important;
+    flex: none !important;
+    float: none !important;
+  }
+
+  /* 4. Hide non-printable app components */
   aside,
+  header,
   header.sticky,
   nav,
   button,
   .no-print,
   [class*="print:hidden"],
   .debug-info,
-  [role="dialog"] {
+  [role="dialog"],
+  [role="alertdialog"],
+  .fixed,
+  .sticky {
     display: none !important;
   }
 
-  /* Reset document root for physical printing */
-  html, body {
-    background: #FFFFFF !important;
-    color: #111827 !important;
-    font-size: 11pt !important;
-    line-height: 1.5 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    overflow: visible !important;
-  }
-
-  main {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    overflow: visible !important;
-  }
-
-  /* Formal Page Setup */
+  /* 5. Formal A4 Page Setup */
   @page {
-    size: letter portrait;
+    size: A4 portrait;
     margin: 18mm 16mm 18mm 16mm;
   }
 
-  /* Force print display for dedicated printable report */
-  .printable-report {
-    display: block !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-    background: #FFFFFF !important;
+  /* 6. Typography & Pagination Rules */
+  h1, h2, h3, h4, h5, h6 {
     color: #000000 !important;
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  p, li, blockquote {
+    color: #000000 !important;
+    orphans: 3 !important;
+    widows: 3 !important;
+  }
+
+  li {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* 7. Components that should never be severed across pages */
+  .caption-box,
+  .court-caption,
+  .signature-block,
+  .citation-callout,
+  table,
+  tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border-color: #333333 !important;
   }
 
   .print-page-break {
@@ -225,24 +293,15 @@
     break-inside: avoid;
   }
 
-  /* Ensure high-contrast legal black typography */
-  .printable-report h1,
-  .printable-report h2,
-  .printable-report h3,
-  .printable-report p,
-  .printable-report span,
-  .printable-report div {
-    color: #000000 !important;
-  }
-
-  .printable-report table {
+  /* Force display of dedicated printable reports */
+  .printable-report {
+    display: block !important;
     width: 100% !important;
-    border-collapse: collapse !important;
-  }
-
-  .printable-report th,
-  .printable-report td {
-    border: 1px solid #333333 !important;
-    padding: 6px 10px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
   }
 }

@@ -8,6 +8,8 @@ export interface IUser extends Document {
   role: 'LAWYER' | 'CASE_WORKER' | 'ADMIN';
   registrationNumber?: string;
   requiresPasswordChange: boolean;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
   createdAt: Date;
 }
 
@@ -19,6 +21,8 @@ const UserSchema = new Schema<IUser>({
   role: { type: String, enum: ['LAWYER', 'CASE_WORKER', 'ADMIN'], default: 'CASE_WORKER' },
   registrationNumber: { type: String },
   requiresPasswordChange: { type: Boolean, default: false },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
   createdAt: { type: Date, default: Date.now },
 });
 

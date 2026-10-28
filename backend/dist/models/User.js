@@ -42,6 +42,8 @@ const UserSchema = new mongoose_1.Schema({
     role: { type: String, enum: ['LAWYER', 'CASE_WORKER', 'ADMIN'], default: 'CASE_WORKER' },
     registrationNumber: { type: String },
     requiresPasswordChange: { type: Boolean, default: false },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
     createdAt: { type: Date, default: Date.now },
 });
 exports.default = mongoose_1.default.models.User || mongoose_1.default.model('User', UserSchema);

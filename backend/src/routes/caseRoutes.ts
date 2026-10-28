@@ -21,7 +21,12 @@ import {
 import { protect } from '../middleware/authMiddleware';
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+
+// Safe multer memory storage with 10MB limit
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB file limit
+});
 
 router.use(protect);
 

@@ -9,7 +9,11 @@ const CaseController_1 = require("../controllers/CaseController");
 const AIAnalysisController_1 = require("../controllers/AIAnalysisController");
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const router = express_1.default.Router();
-const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage() });
+// Safe multer memory storage with 10MB limit
+const upload = (0, multer_1.default)({
+    storage: multer_1.default.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB file limit
+});
 router.use(authMiddleware_1.protect);
 // Practice Analyser Sandbox Route (must be before /:id)
 router.post('/practice/analyze', AIAnalysisController_1.analyzePractice);
