@@ -6,18 +6,39 @@ import CaseStatement from '../models/CaseStatement';
 import TimelineEvent from '../models/TimelineEvent';
 import AuditLog from '../models/AuditLog';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { redactPiiFallback } from '../utils/piiFallback';
+
+// Helper to enforce tenant isolation and case existence
+async function verifyCaseAccess(caseId: string, orgId: any) {
+  if (!mongoose.Types.ObjectId.isValid(caseId)) return null;
+  return await Case.findOne({ _id: caseId, organizationId: orgId });
+}
 
 export const createCase = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { title } = req.body;
-    // For demo purposes, we will assign a new ObjectId for organizationId if not provided
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ message: 'Case title is required' });
+    }
+
+    const sanitizedTitle = title.trim().substring(0, 250);
+
     const newCase = await Case.create({ 
       createdBy: req.user._id, 
-      title,
-      organizationId: req.user.organizationId
+      title: sanitizedTitle,
+      organizationId: req.user.organizationId,
+      status: 'INTAKE'
     });
     
-    await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'CREATE', collectionName: 'Case', documentId: newCase._id });
+    await AuditLog.create({ 
+      organizationId: req.user.organizationId, 
+      actorId: req.user._id, 
+      action: 'CREATE', 
+      collectionName: 'Case', 
+      documentId: newCase._id,
+      diff: { title: sanitizedTitle }
+    });
+
     res.status(201).json(newCase);
   } catch (error) {
     next(error);
@@ -26,11 +47,14 @@ export const createCase = async (req: AuthRequest, res: Response, next: NextFunc
 
 export const getCases = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    // Basic filter: only show cases owned by user unless admin
     const filter: any = { organizationId: req.user.organizationId };
-    if (req.user.role !== 'admin' && req.user.role !== 'ADMIN') {
+    
+    // Case workers see their own cases, while Lawyers and Admins can supervise all firm cases
+    const userRole = (req.user.role || '').toUpperCase();
+    if (userRole !== 'ADMIN' && userRole !== 'LAWYER') {
       filter.createdBy = req.user._id;
     }
+
     const cases = await Case.find(filter).sort({ createdAt: -1 });
     res.json(cases);
   } catch (error) {
@@ -38,15 +62,12 @@ export const getCases = async (req: AuthRequest, res: Response, next: NextFuncti
   }
 };
 
-import { redactPiiFallback } from '../utils/piiFallback';
-
 export const getCaseById = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const caseDoc = await Case.findOne({ _id: id, organizationId: req.user.organizationId });
+    const caseDoc = await verifyCaseAccess(id, req.user.organizationId);
     if (!caseDoc) {
-      res.status(404);
-      throw new Error('Case not found');
+      return res.status(404).json({ message: 'Case not found or access denied.' });
     }
 
     const inputs = await CaseInput.findOne({ caseId: id });
@@ -54,11 +75,12 @@ export const getCaseById = async (req: AuthRequest, res: Response, next: NextFun
     const timeline = await TimelineEvent.find({ caseId: id, organizationId: req.user.organizationId }).sort({ eventDate: 1 });
     
     const CaseDocument = (await import('../models/CaseDocument')).default;
-    const documents = await CaseDocument.find({ caseId: id }).select('-textContent'); // Exclude full text to save bandwidth
+    const documents = await CaseDocument.find({ caseId: id, organizationId: req.user.organizationId }).select('-textContent');
 
     const PredictionModel = (await import('../models/Prediction')).default;
     const RecommendationModel = (await import('../models/Recommendation')).default;
     const BriefModel = (await import('../models/Brief')).default;
+    
     const prediction = await PredictionModel.findOne({ caseId: id });
     const recommendation = await RecommendationModel.findOne({ caseId: id });
     const brief = await BriefModel.findOne({ caseId: id });
@@ -72,8 +94,25 @@ export const getCaseById = async (req: AuthRequest, res: Response, next: NextFun
 export const updateCaseInput = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const input = await CaseInput.findOneAndUpdate({ caseId: id }, { ...req.body, caseId: id }, { new: true, upsert: true });
-    await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'UPDATE', collectionName: 'CaseInput', documentId: input._id });
+    const caseDoc = await verifyCaseAccess(id, req.user.organizationId);
+    if (!caseDoc) {
+      return res.status(404).json({ message: 'Case not found or access denied.' });
+    }
+
+    const input = await CaseInput.findOneAndUpdate(
+      { caseId: id }, 
+      { ...req.body, caseId: id }, 
+      { new: true, upsert: true }
+    );
+
+    await AuditLog.create({ 
+      organizationId: req.user.organizationId, 
+      actorId: req.user._id, 
+      action: 'UPDATE', 
+      collectionName: 'CaseInput', 
+      documentId: input._id 
+    });
+
     res.json(input);
   } catch (error) {
     next(error);
@@ -83,8 +122,12 @@ export const updateCaseInput = async (req: AuthRequest, res: Response, next: Nex
 export const updateCaseStatement = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    const caseDoc = await verifyCaseAccess(id, req.user.organizationId);
+    if (!caseDoc) {
+      return res.status(404).json({ message: 'Case not found or access denied.' });
+    }
+
     const PII_SERVICE_URL = process.env.PII_SERVICE_URL || 'http://localhost:5001';
-    
     const textToAnonymize = req.body.originalText || req.body.statement || req.body.text;
     let anonymizedText = req.body.anonymizedText;
 
@@ -115,7 +158,15 @@ export const updateCaseStatement = async (req: AuthRequest, res: Response, next:
       { anonymizedText, caseId: id }, 
       { new: true, upsert: true }
     );
-    await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'UPDATE', collectionName: 'CaseStatement', documentId: statement._id });
+
+    await AuditLog.create({ 
+      organizationId: req.user.organizationId, 
+      actorId: req.user._id, 
+      action: 'UPDATE', 
+      collectionName: 'CaseStatement', 
+      documentId: statement._id 
+    });
+
     res.json(statement);
   } catch (error) {
     next(error);
@@ -125,9 +176,14 @@ export const updateCaseStatement = async (req: AuthRequest, res: Response, next:
 export const addTimelineEvent = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    const caseDoc = await verifyCaseAccess(id, req.user.organizationId);
+    if (!caseDoc) {
+      return res.status(404).json({ message: 'Case not found or access denied.' });
+    }
+
     const eventDate = req.body.eventDate || req.body.date || new Date();
     const severityLevel = req.body.severityLevel || req.body.severity || 'Moderate';
-    const description = req.body.description || '';
+    const description = (req.body.description || '').trim();
 
     const event = await TimelineEvent.create({
       caseId: id,
@@ -136,7 +192,15 @@ export const addTimelineEvent = async (req: AuthRequest, res: Response, next: Ne
       severityLevel,
       description
     });
-    await AuditLog.create({ organizationId: req.user.organizationId, actorId: req.user._id, action: 'CREATE', collectionName: 'TimelineEvent', documentId: event._id });
+
+    await AuditLog.create({ 
+      organizationId: req.user.organizationId, 
+      actorId: req.user._id, 
+      action: 'CREATE', 
+      collectionName: 'TimelineEvent', 
+      documentId: event._id 
+    });
+
     res.status(201).json(event);
   } catch (error) {
     next(error);
@@ -146,12 +210,22 @@ export const addTimelineEvent = async (req: AuthRequest, res: Response, next: Ne
 export const uploadDocument = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    const caseDoc = await verifyCaseAccess(id, req.user.organizationId);
+    if (!caseDoc) {
+      return res.status(404).json({ message: 'Case not found or access denied.' });
+    }
     
     if (!req.file) {
       return res.status(400).json({ error: 'No file provided' });
     }
 
+    // 10MB maximum file size check
+    if (req.file.size > 10 * 1024 * 1024) {
+      return res.status(400).json({ error: 'File size exceeds maximum 10MB limit.' });
+    }
+
     const fileText = req.file.buffer.toString('utf-8');
+    const sanitizedFileName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
 
     // 1. Save locally in MongoDB (Metadata + Text)
     const CaseDocument = (await import('../models/CaseDocument')).default;
@@ -159,7 +233,7 @@ export const uploadDocument = async (req: AuthRequest, res: Response, next: Next
       caseId: id,
       organizationId: req.user.organizationId,
       uploadedBy: req.user._id,
-      fileName: req.file.originalname,
+      fileName: sanitizedFileName,
       fileType: req.file.mimetype,
       textContent: fileText
     });
