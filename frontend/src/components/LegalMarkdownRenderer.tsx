@@ -277,13 +277,13 @@ export default function LegalMarkdownRenderer({
   }
 
   return (
-    <div className={`space-y-4 font-serif text-sm sm:text-[15px] leading-[1.75] text-foreground/90 print:text-black ${className}`}>
+    <div className={`space-y-4 font-serif text-sm sm:text-[15px] leading-[1.75] text-foreground/90 print:text-black print:space-y-3 ${className}`}>
       {blocks.map((block, idx) => {
         switch (block.type) {
           case 'h1':
             return (
-              <div key={idx} className="my-6 pb-3 border-b-2 border-border/80 print:border-black text-left">
-                <h1 className="text-base sm:text-lg font-bold uppercase tracking-wider text-foreground print:text-black">
+              <div key={idx} className="my-6 pb-3 border-b-2 border-border/80 print:border-black text-left print:break-inside-avoid print:break-after-avoid print:my-4 print:pb-2">
+                <h1 className="text-base sm:text-lg font-bold uppercase tracking-wider text-foreground print:text-black print:text-sm">
                   {renderInlineMarkdown(block.content || '')}
                 </h1>
               </div>
@@ -291,8 +291,8 @@ export default function LegalMarkdownRenderer({
 
           case 'h2':
             return (
-              <div key={idx} className="mt-8 mb-4 pt-3 border-b border-border/70 print:border-black text-left">
-                <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-foreground print:text-black flex items-center gap-2.5 pb-2">
+              <div key={idx} className="mt-8 mb-4 pt-3 border-b border-border/70 print:border-black text-left print:break-inside-avoid print:break-after-avoid print:mt-5 print:mb-3 print:pt-2">
+                <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-foreground print:text-black flex items-center gap-2.5 pb-2 print:pb-1 print:text-xs">
                   <span className="w-2 h-2 rounded-full bg-[#9E6752] print:bg-black shrink-0" />
                   <span>{renderInlineMarkdown(block.content || '')}</span>
                 </h2>
@@ -301,16 +301,16 @@ export default function LegalMarkdownRenderer({
 
           case 'h3':
             return (
-              <h3 key={idx} className="text-xs sm:text-sm font-bold uppercase tracking-wide text-foreground print:text-black mt-5 mb-2 pl-2.5 border-l-2 border-[#2D4354] text-left">
+              <h3 key={idx} className="text-xs sm:text-sm font-bold uppercase tracking-wide text-foreground print:text-black mt-5 mb-2 pl-2.5 border-l-2 border-[#2D4354] print:border-black text-left print:break-inside-avoid print:break-after-avoid print:mt-4 print:mb-1.5 print:text-[11px]">
                 {renderInlineMarkdown(block.content || '')}
               </h3>
             );
 
           case 'ul':
             return (
-              <ul key={idx} className="space-y-2.5 my-4 pl-6 list-disc text-foreground/90 print:text-black text-left leading-[1.7]">
+              <ul key={idx} className="space-y-2.5 my-4 pl-6 list-disc text-foreground/90 print:text-black text-left leading-[1.7] print:my-2 print:space-y-1.5 print:leading-normal">
                 {(block.items || []).map((item, itemIdx) => (
-                  <li key={itemIdx} className="leading-relaxed pl-1">
+                  <li key={itemIdx} className="leading-relaxed pl-1 print:break-inside-avoid print:leading-normal">
                     {renderInlineMarkdown(item)}
                   </li>
                 ))}
@@ -319,9 +319,9 @@ export default function LegalMarkdownRenderer({
 
           case 'ol':
             return (
-              <ol key={idx} className="space-y-2.5 my-4 pl-6 list-decimal text-foreground/90 print:text-black font-medium text-left leading-[1.7]">
+              <ol key={idx} className="space-y-2.5 my-4 pl-6 list-decimal text-foreground/90 print:text-black font-medium text-left leading-[1.7] print:my-2 print:space-y-1.5 print:leading-normal">
                 {(block.items || []).map((item, itemIdx) => (
-                  <li key={itemIdx} className="leading-relaxed pl-1">
+                  <li key={itemIdx} className="leading-relaxed pl-1 print:break-inside-avoid print:leading-normal">
                     {renderInlineMarkdown(item)}
                   </li>
                 ))}
@@ -330,7 +330,7 @@ export default function LegalMarkdownRenderer({
 
           case 'quote':
             return (
-              <blockquote key={idx} className="p-4 my-4 rounded-xl bg-muted/30 border-l-4 border-primary text-xs font-serif italic text-foreground/90 print:border-black text-left">
+              <blockquote key={idx} className="p-4 my-4 rounded-xl bg-muted/30 border-l-4 border-primary text-xs font-serif italic text-foreground/90 print:border-black text-left print:break-inside-avoid print:bg-transparent print:p-2 print:my-2">
                 {renderInlineMarkdown(block.content || '')}
               </blockquote>
             );
@@ -338,7 +338,7 @@ export default function LegalMarkdownRenderer({
           case 'p':
           default:
             return (
-              <p key={idx} className="text-left leading-[1.75] text-foreground/90 print:text-black mb-4 break-words">
+              <p key={idx} className="text-left leading-[1.75] text-foreground/90 print:text-black mb-4 break-words print:leading-relaxed print:mb-3 print:text-[10.5pt]">
                 {renderInlineMarkdown(block.content || '')}
               </p>
             );
