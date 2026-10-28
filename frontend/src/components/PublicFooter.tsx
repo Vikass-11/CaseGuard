@@ -85,6 +85,11 @@ export default function PublicFooter() {
                 <Link href="/about" className="hover:text-white transition-colors">About Us</Link>
               </li>
               <li>
+                <Link href="/sandbox" className="hover:text-white transition-colors flex items-center gap-1.5">
+                  AI Rehearsal Sandbox <span className="text-[10px] bg-[#FED7A5]/20 text-[#FED7A5] px-1.5 py-0.5 rounded font-bold uppercase">Public</span>
+                </Link>
+              </li>
+              <li>
                 <Link href="/faq" className="hover:text-white transition-colors">FAQ & Knowledge Base</Link>
               </li>
               <li>

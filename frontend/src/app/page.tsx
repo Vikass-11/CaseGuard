@@ -174,7 +174,7 @@ export default function PublicHomePage() {
                 </div>
 
                 <Link
-                  href="/practice"
+                  href="/sandbox"
                   className="w-full bg-[#FED7A5] hover:bg-[#FED7A5]/90 text-[#20212B] py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow cursor-pointer"
                 >
                   <span>Test Practice Analyser Sandbox</span>
